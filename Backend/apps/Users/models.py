@@ -6,20 +6,44 @@ from uuid import uuid4
 
 
 class User(AbstractUser):
-    uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
-    email_verified = models.BooleanField(default=False)
-    phone_verified = models.BooleanField(default=False)
-    phone = models.CharField(max_length=20, blank=True, null=True)
+    uuid = models.UUIDField(
+        default=uuid4,
+        editable=False,
+        unique=True
+    )
+    email_verified = models.BooleanField(
+        default=False
+    )
+    phone_verified = models.BooleanField(
+        default=False
+    )
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True
+    )
     profile_picture = models.ImageField(
         upload_to="profile_pictures/",
         default="profile_pictures/default.png"
     )
-    otp = models.IntegerField(default=0)
-    otp_created_at = models.DateTimeField(auto_now_add=True)
-    otp_attempts = models.IntegerField(default=0)
-    accept_terms = models.BooleanField(default=False)
-    created_Date = models.DateTimeField(auto_now_add=True)
-    last_login = models.DateTimeField(auto_now_add=True)
+    otp = models.IntegerField(
+        default=0
+    )
+    otp_created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+    otp_attempts = models.IntegerField(
+        default=0
+    )
+    accept_terms = models.BooleanField(
+        default=False
+    )
+    created_Date = models.DateTimeField(
+        auto_now_add=True
+    )
+    last_login = models.DateTimeField(
+        auto_now_add=True
+    )
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='custom_user_set',
@@ -40,9 +64,20 @@ class User(AbstractUser):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, related_name="profile", on_delete=models.CASCADE)
-    reset_password_token = models.CharField(max_length=50, default="", blank=True)
-    reset_password_expire = models.DateTimeField(null=True, blank=True)
+    user = models.OneToOneField(
+        User,
+        related_name="profile",
+        on_delete=models.CASCADE
+    )
+    reset_password_token = models.CharField(
+        max_length=50,
+        default="",
+        blank=True
+    )
+    reset_password_expire = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
 
 @receiver(post_save, sender=User)
