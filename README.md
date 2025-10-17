@@ -40,6 +40,8 @@ A gamified, mobile-first platform that rewards users with tangible value (discou
   * **Community & Impact Hub**: An in-app dashboard showing the community's collective environmental impact.
   * **Corporate Social Responsibility (CSR) Portal**: A web portal for businesses to sign up as partners and manage their discount offerings.
 
+Source: [The_RE_-_User_Stories.pdf](https://trello.com/1/cards/68ec1cb4bbcf8f4108543679/attachments/68f2405a7dc89905c0056c9c/download/The_RE_-_User_Stories.pdf)
+
 ## 🛠️ Technology Stack
 
 | Category                   | Technology / Tool                                         |
