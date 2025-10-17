@@ -40,7 +40,7 @@ A gamified, mobile-first platform that rewards users with tangible value (discou
   * **Community & Impact Hub**: An in-app dashboard showing the community's collective environmental impact.
   * **Corporate Social Responsibility (CSR) Portal**: A web portal for businesses to sign up as partners and manage their discount offerings.
 
-Source: [The_RE_-_User_Stories.pdf](https://trello.com/1/cards/68ec1cb4bbcf8f4108543679/attachments/68f2405a7dc89905c0056c9c/download/The_RE_-_User_Stories.pdf)
+Source: [The RE - User Stories](https://trello.com/1/cards/68ec1cb4bbcf8f4108543679/attachments/68f2405a7dc89905c0056c9c/download/The_RE_-_User_Stories.pdf)
 
 ## 🛠️ Technology Stack
 
@@ -56,7 +56,7 @@ Source: [The_RE_-_User_Stories.pdf](https://trello.com/1/cards/68ec1cb4bbcf8f410
 | **Infrastructure & Deployment** | Hostinger, Nginx, Docker, GitHub Actions (CI/CD)          |
 | **API Testing & Security** | Postman, Web/Mobile Endpoint Security Best Practices      |
 
-Source: [The ReWard - Unified Project Plan.pdf](https://trello.com/1/cards/68ec1b92ffb2f8e20c144889/attachments/68ec1bf19315f19435dae38e/download/The_ReWard_-_Unified_Project_Plan.pdf)
+Source: [The RE - Unified Project Plan](https://trello.com/1/cards/68ec1b92ffb2f8e20c144889/attachments/68ec1bf19315f19435dae38e/download/The_ReWard_-_Unified_Project_Plan.pdf)
 
 ## 🚀 Getting Started
 
