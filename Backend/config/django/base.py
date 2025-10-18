@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-
+from django.templatetags.static import static
+from django.utils.translation import gettext_lazy as _
 from config.env import BASE_DIR
 
 
@@ -50,6 +51,7 @@ INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 BASIC_MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -113,6 +115,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
+LANGUAGES = (
+    ('en', _('English')),
+    ('ar', _('Arabic')),
+)
 
 TIME_ZONE = 'UTC'
 
@@ -126,6 +132,7 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = "/static/"
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = '/media/'
@@ -137,3 +144,37 @@ from config.settings.cors import *  # noqa
 from config.settings.sessions import *  # noqa
 from config.settings.email_sending import *  # noqa
 from .config_selector import *  # noqa: F403 F401 E402
+
+
+# ==============================================================================
+# UNFOLD THEME CONFIGURATION
+# ==============================================================================
+
+UNFOLD = {
+    "SITE_TITLE": "Admin Dashboard",
+    "SITE_HEADER": "The RE",
+
+    # Create a static/images folder inside the Backend folder and put your image (e.g. logo.svg) inside it.
+    "SITE_LOGO": {
+        "light": lambda request: static("images/logo.png"),
+        "dark": lambda request: static("images/logo.png"),
+    },
+
+    "COLORS": {
+        "primary": {
+            "50": "oklch(97.7% .014 308.299)",
+            "100": "oklch(94.6% .033 307.174)",
+            "200": "oklch(90.2% .063 306.703)",
+            "300": "oklch(82.7% .119 306.383)",
+            "400": "oklch(71.4% .203 305.504)",
+            "500": "oklch(62.7% .265 303.9)",
+            "600": "oklch(55.8% .288 302.321)",
+            "700": "oklch(49.6% .265 301.924)",
+            "800": "oklch(43.8% .218 303.724)",
+            "900": "oklch(38.1% .176 304.987)",
+            "950": "oklch(29.1% .149 302.717)",
+        },
+    },
+
+    "SHOW_LANGUAGES": True,
+}
