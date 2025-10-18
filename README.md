@@ -82,12 +82,12 @@ Source: [The RE - Unified Project Plan](https://trello.com/1/cards/68ec1b92ffb2f
     pipenv shell
     ```
 
-3.  **Create a `.env` file** in the `backend` directory and add the necessary environment variables. You can use the `.env.example` file as a template.
+3.  **Create a `.env` file** in the `backend` directory and add the necessary environment variables.
 
 4.  **Run the development server using Docker:**
 
     ```sh
-    docker-compose up --build
+    docker-compose -f Backend/Docker/docker-compose.yml up --build
     ```
 
     The application will be available at `http://localhost:8000`.
@@ -139,7 +139,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 | **Web Frontend Developer** | Clara, Sheri    |
 | **Mobile Frontend Developer**| Aziz, Ramez     |
 | **Backend Developer** | Omar            |
-| **DevOps Engineer** | Omar, Kiro      |
+| **DevOps Engineer** | Omar            |
 | **Cybersecurity Specialist** | Kiro            |
 
 ---
