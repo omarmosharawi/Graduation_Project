@@ -9,6 +9,7 @@ __pycache__/
 !**/migrations/
 media
 staticfiles
+static
 desktop.ini
 celerybeat-schedule
 .mypy_cache
