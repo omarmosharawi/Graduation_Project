@@ -151,8 +151,8 @@ from .config_selector import *  # noqa: F403 F401 E402
 # ==============================================================================
 
 UNFOLD = {
-    "SITE_TITLE": "Admin Dashboard",
-    "SITE_HEADER": "The RE",
+    "SITE_TITLE": "The RE Admin Dashboard",
+    "SITE_HEADER": "The RE Platform",
 
     # Create a static/images folder inside the Backend folder and put your image (e.g. logo.svg) inside it.
     "SITE_LOGO": {
