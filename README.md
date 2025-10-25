@@ -131,15 +131,15 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## 👥 Team
 
-| Role                         | Member(s)       |
-| ---------------------------- | --------------- |
-| **Product Manager** | Omar            |
-| **Documentation & Architecture** | Asma, Clara     |
-| **Product Designer (UI/UX)** | Clara, Sheri    |
-| **Web Frontend Developer** | Clara, Sheri    |
-| **Mobile Frontend Developer**| Aziz, Ramez     |
-| **Backend Developer** | Omar            |
-| **DevOps Engineer** | Omar            |
-| **Cybersecurity Specialist** | Kiro            |
+| Role                         | Member(s)    |
+| ---------------------------- |--------------|
+| **Product Manager** | Omar         |
+| **Documentation & Architecture** | Asma, Clara  |
+| **Product Designer (UI/UX)** | Clara, Sheri |
+| **Web Frontend Developer** | Kiro, Asma   |
+| **Mobile Frontend Developer**| Aziz, Ramez  |
+| **Backend Developer** | Omar         |
+| **DevOps Engineer** | Omar         |
+| **Cybersecurity Specialist** | Kiro         |
 
 ---
