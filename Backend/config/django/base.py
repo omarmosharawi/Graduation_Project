@@ -16,8 +16,28 @@ from django.utils.translation import gettext_lazy as _
 from config.env import BASE_DIR
 
 
-REST_FRAMEWORK: dict = {  # ignore
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day',
+        'otp_request': '1/min',
+    }
+}
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'The RE Platform API',
+    'DESCRIPTION': 'API documentation for The RE Platform',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
 }
 
 # Application definition
@@ -40,6 +60,7 @@ THIRD_PARTY_APPS = [
     "django_prometheus",
     'drf_spectacular',
     'drf_spectacular_sidecar',
+    'rest_framework_simplejwt',
 ]
 
 LOCAL_APPS = [
@@ -59,7 +80,7 @@ BASIC_MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
+    # 'allauth.account.middleware.AccountMiddleware',
 ]
 
 MIDDLEWARE = (
