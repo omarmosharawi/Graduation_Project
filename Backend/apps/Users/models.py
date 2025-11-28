@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from uuid import uuid4
@@ -26,11 +27,14 @@ class User(AbstractUser):
         upload_to="profile_pictures/",
         default="profile_pictures/default.png"
     )
-    otp = models.IntegerField(
-        default=0
+    otp = models.CharField(
+        max_length=6,
+        blank=True,
+        null=True
     )
     otp_created_at = models.DateTimeField(
-        auto_now_add=True
+        blank=True,
+        null=True
     )
     otp_attempts = models.IntegerField(
         default=0
@@ -43,6 +47,9 @@ class User(AbstractUser):
     )
     last_login = models.DateTimeField(
         auto_now_add=True
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True
     )
     groups = models.ManyToManyField(
         'auth.Group',

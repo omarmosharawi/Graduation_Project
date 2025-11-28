@@ -20,3 +20,5 @@ debug.log
 volumes
 code
 local_data.json
+Pipfile
+Pipfile.lock
