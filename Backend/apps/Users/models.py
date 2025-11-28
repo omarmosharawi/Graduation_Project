@@ -42,7 +42,7 @@ class User(AbstractUser):
     accept_terms = models.BooleanField(
         default=False
     )
-    created_Date = models.DateTimeField(
+    created_at = models.DateTimeField(
         auto_now_add=True
     )
     last_login = models.DateTimeField(

@@ -22,7 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from prometheus_client import make_wsgi_app
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from Backend.apps.Users.urls import url_Auth
+from apps.Users.urls import url_Auth
 
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),
@@ -35,6 +35,7 @@ urlpatterns += i18n_patterns(
     path("prometheus/", include("django_prometheus.urls")),
     path('metrics/', csrf_exempt(make_wsgi_app())),
 
+    # API Documentation (Swagger)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 
@@ -43,4 +44,7 @@ urlpatterns += i18n_patterns(
     path("api/v1/users/", include("apps.Users.urls")),  # Better to group user URLs inside the app
 )
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
