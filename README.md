@@ -134,12 +134,12 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 | Role                         | Member(s)    |
 | ---------------------------- |--------------|
 | **Product Manager** | Omar         |
-| **Documentation & Architecture** | Asma, Clara  |
+| **Documentation & Architecture** | Asma, Sheri  |
 | **Product Designer (UI/UX)** | Clara, Sheri |
-| **Web Frontend Developer** | Kiro, Asma   |
+| **Web Frontend Developer** | Omar, Kiro   |
 | **Mobile Frontend Developer**| Aziz, Ramez  |
 | **Backend Developer** | Omar         |
 | **DevOps Engineer** | Omar         |
-| **Cybersecurity Specialist** | Kiro         |
+| **Cybersecurity Specialist** | Kiro, Clara         |
 
 ---
