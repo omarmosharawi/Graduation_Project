@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Flutter/Dart
+*.dart_tool/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+
+# Android
+reward_app/android/.gradle/
+reward_app/android/app/debug/
+reward_app/android/app/profile/
+reward_app/android/app/release/
+*.apk
+*.aab
+
+# iOS
+reward_app/ios/Pods/
+reward_app/ios/.symlinks/
+reward_app/ios/Flutter/Flutter.framework/
+reward_app/ios/Flutter/Flutter.podspec
+*.ipa
+
+# IDE
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# API Secrets (IMPORTANT!)
+api/config.php
+
+# Firebase config (keep local, don't commit to public repos)
+# google-services.json
+# GoogleService-Info.plist
+
+# Build outputs
+reward_app/build/
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+.dart_tool/

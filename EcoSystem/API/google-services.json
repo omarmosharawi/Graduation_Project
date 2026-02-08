@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "380036791022",
+    "project_id": "reward-flutter-2026",
+    "storage_bucket": "reward-flutter-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380036791022:android:6d8bbb665d413ca3f9d1ff",
+        "android_client_info": {
+          "package_name": "com.reward.reward_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "380036791022-covqfbrlbji4gae5vfuo6hfseiiqm082.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.reward.reward_app",
+            "certificate_hash": "d255553f97c680d1f5fc7382d013550a9c6c3201"
+          }
+        },
+        {
+          "client_id": "380036791022-n4lu2hp8n78bfok80fuuopuknrktdm4g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYxBmm6AtRgwDPFT4j0qtkMJ10Rl50TRc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "380036791022-n4lu2hp8n78bfok80fuuopuknrktdm4g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

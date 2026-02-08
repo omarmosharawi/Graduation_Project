@@ -1,0 +1,24 @@
+# Redirect all requests to index.php
+RewriteEngine On
+RewriteBase /api/
+
+# Don't rewrite for existing files/directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rewrite all requests to index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Security headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "DENY"
+Header set X-XSS-Protection "1; mode=block"
+
+# Hide server signature
+ServerSignature Off
+
+# Deny access to sensitive files
+<FilesMatch "^(config\.php|firebase\.php)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
