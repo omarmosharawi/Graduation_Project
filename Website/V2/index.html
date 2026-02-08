@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The RE | Recycle + Reward</title>
+    <meta name="description" content="Join The RE, Egypt's premier recycling platform. Earn rewards for recycling plastic, glass, and metal at our smart IoT kiosks.">
+    <link rel="icon" href="./RE_white.png">
+
+    <!-- Social Media Sharing (Open Graph) -->
+    <meta property="og:title" content="The RE Egypt | Recycle + Reward">
+    <meta property="og:description" content="Join The RE Platform, Egypt's premier recycling platform. Earn rewards for recycling plastic, glass, and metal at our smart IoT kiosks.">
+    <meta property="og:image" content="./RE_green_svg.png">
+    <meta property="og:url" content="https://omarmosharawi.github.io/TheRe_LandingPage/">
+    <meta property="og:type" content="website">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;300;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Animations */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1s ease-out, transform 1s ease-out;
+        }
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Game Specific Styles */
+        .game-item {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: top 0.1s linear; /* Smooth movement */
+        }
+
+        /* Custom Scrollbar Branding */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0A3F35; /* brand-dark */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1B5E4F; /* brand-primary */
+            border-radius: 6px;
+            border: 3px solid #0A3F35; /* Creates padding effect */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #F4A261; /* brand-accent */
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Custom Brand Colors extracted from "The RE" Logo
+                        brand: {
+                            dark: '#0A3F35',   // Deep Forest Green from logo background
+                            primary: '#1B5E4F', // Lighter Green for buttons
+                            light: '#E8F7EE',   // Very light green for backgrounds
+                            cream: '#F2F9F4',   // Cream/White for text contrasts
+                            accent: '#F4A261',  // Orange from the recycle icon
+                        },
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            300: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-cream text-slate-800 overflow-x-hidden">
+
+    <!-- Navigation -->
+    <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 py-4 bg-white/90 backdrop-blur-md shadow-sm">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0, 0)">
+                <!-- Logo -->
+                <img src="./logo_dark_green.png" alt="The RE Logo" class="h-10 md:h-12 w-auto object-contain">
+            </div>
+
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center gap-8">
+                <button onclick="scrollToSection('ai-assistant')" class="text-sm font-medium text-slate-600 hover:text-brand-primary transition-colors">AI Assistant</button>
+                <button onclick="scrollToSection('game')" class="text-sm font-medium text-slate-600 hover:text-brand-primary transition-colors">Game</button>
+                <button onclick="scrollToSection('how-it-works')" class="text-sm font-medium text-slate-600 hover:text-brand-primary transition-colors">How It Works</button>
+                <button onclick="scrollToSection('features')" class="text-sm font-medium text-slate-600 hover:text-brand-primary transition-colors">Features</button>
+                <button onclick="scrollToSection('partners')" class="text-sm font-medium text-slate-600 hover:text-brand-primary transition-colors">Partners</button>
+                <button class="bg-brand-primary hover:bg-brand-dark text-white px-6 py-2.5 rounded-full font-semibold text-sm transition-all shadow-lg hover:shadow-emerald-200 transform hover:-translate-y-0.5">
+                    Download App
+                </button>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button class="md:hidden p-2 text-slate-600" onclick="toggleMenu()">
+                <i id="menu-icon" data-lucide="menu"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu" class="hidden md:hidden absolute top-full left-0 w-full bg-white shadow-lg border-t border-slate-100 py-4 px-6 flex flex-col gap-4">
+            <button onclick="scrollToSection('ai-assistant')" class="text-left py-2 text-slate-600 font-medium">AI Assistant</button>
+            <button onclick="scrollToSection('game')" class="text-left py-2 text-slate-600 font-medium">Game</button>
+            <button onclick="scrollToSection('how-it-works')" class="text-left py-2 text-slate-600 font-medium">How It Works</button>
+            <button onclick="scrollToSection('features')" class="text-left py-2 text-slate-600 font-medium">Features</button>
+            <button class="bg-brand-primary text-white w-full py-3 rounded-lg font-semibold">Download App</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section (Padding Reduced) -->
+    <!-- Changed pt-32/48 to pt-24/32 to reduce large white space -->
+    <section class="relative pt-24 pb-16 lg:pt-32 lg:pb-24 overflow-hidden">
+        <!-- Background Decorative Blobs using Brand Colors -->
+        <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-brand-light rounded-full blur-3xl opacity-70 animate-pulse"></div>
+        <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-emerald-100 rounded-full blur-3xl opacity-70 animate-pulse" style="animation-delay: 1s;"></div>
+
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <div class="lg:w-1/2 space-y-8 fade-in-section">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-light text-brand-dark text-sm font-medium border border-emerald-100">
+                        <i data-lucide="leaf" class="w-3.5 h-3.5"></i>
+                        <span>The Future of Recycling in Egypt</span>
+                    </div>
+                    
+                    <h1 class="text-5xl lg:text-7xl font-extrabold text-brand-dark leading-[1.1]">
+                        Turn Your Waste into <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-accent">Wealth</span>
+                    </h1>
+                    
+                    <p class="text-lg text-slate-600 leading-relaxed max-w-xl">
+                        The RE connects you to smart kiosks and rewards you for every bottle, can, or box you recycle. Join the movement for a cleaner environment and tangible rewards.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 pt-2">
+                        <button onclick="scrollToSection('how-it-works')" class="flex items-center justify-center gap-2 bg-brand-dark hover:text-brand-accent text-white px-8 py-4 rounded-xl font-semibold transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                            Get Started
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="scrollToSection('ai-assistant')" class="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-brand-primary border-2 border-brand-light px-8 py-4 rounded-xl font-semibold transition-all hover:shadow-lg">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            Ask EcoBot
+                        </button>
+                    </div>
+
+                    <div class="pt-8 flex items-center gap-8 text-sm text-slate-500 font-medium">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-brand-accent"></div>
+                            IoT Smart Kiosks
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-brand-accent"></div>
+                            Instant Rewards
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSS Mobile Mockup -->
+                <div class="lg:w-1/2 flex justify-center lg:justify-end fade-in-section">
+                    <div class="relative w-[300px] h-[600px] bg-brand-dark rounded-[3rem] p-4 shadow-2xl border-4 border-slate-800 ring-1 ring-slate-900/5 transform hover:scale-[1.02] transition-transform duration-500">
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-1/3 h-7 bg-brand-dark rounded-b-2xl z-20"></div>
+                        <div class="w-full h-full bg-brand-light rounded-[2.25rem] overflow-hidden relative font-sans">
+                            <!-- Mockup Header -->
+                            <div class="h-40 bg-brand-primary p-6 flex flex-col justify-end text-white">
+                                <p class="text-sm opacity-80">Welcome back,</p>
+                                <h3 class="text-2xl font-bold">Omar Mohamed</h3>
+                                <div class="mt-4 flex justify-between items-end">
+                                    <div>
+                                        <p class="text-xs opacity-70">Current Points</p>
+                                        <p class="text-3xl font-bold">2,450</p>
+                                    </div>
+                                    <div class="bg-brand-dark p-2 rounded-lg">
+                                        <i data-lucide="scan-line" class="w-5 h-5"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Mockup Body -->
+                            <div class="p-4 space-y-4">
+                                <div class="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4">
+                                    <div class="bg-orange-100 p-3 rounded-full text-orange-600">
+                                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-800 text-sm">Nearest Kiosk</p>
+                                        <p class="text-xs text-slate-500">0.5km • Cairo Festival City</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                   <div class="bg-white p-4 rounded-xl shadow-sm flex flex-col items-center justify-center gap-2 py-6">
+                                      <i data-lucide="trophy" class="text-brand-accent w-6 h-6"></i>
+                                      <span class="font-bold text-xs text-slate-800">Leaderboard</span>
+                                   </div>
+                                   <div class="bg-white p-4 rounded-xl shadow-sm flex flex-col items-center justify-center gap-2 py-6">
+                                      <i data-lucide="award" class="text-purple-500 w-6 h-6"></i>
+                                      <span class="font-bold text-xs text-slate-800">Rewards</span>
+                                   </div>
+                                </div>
+
+                                <div class="bg-brand-dark text-white p-4 rounded-xl shadow-md mt-4">
+                                    <div class="flex justify-between items-center mb-2">
+                                       <span class="font-bold text-sm">Recent Activity</span>
+                                       <span class="text-xs text-emerald-300">View All</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between text-xs opacity-90 border-b border-emerald-800 pb-2">
+                                            <span>Plastic Bottles (5)</span>
+                                            <span class="font-bold text-emerald-300">+50 pts</span>
+                                        </div>
+                                        <div class="flex justify-between text-xs opacity-90">
+                                            <span>Aluminum Cans (10)</span>
+                                            <span class="font-bold text-emerald-300">+100 pts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Assistant Section -->
+    <section id="ai-assistant" class="py-20 relative overflow-hidden bg-brand-dark">
+        <div class="absolute inset-0 bg-gradient-to-br from-brand-dark to-slate-900"></div>
+        
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col md:flex-row items-center gap-12">
+                <div class="md:w-1/2 text-white fade-in-section">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-sm font-medium border border-emerald-500/30 mb-6">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        <span>Powered by The RE Platform</span>
+                    </div>
+                    <h2 class="text-3xl md:text-5xl font-bold mb-6">
+                        Not sure what to recycle? <br/>
+                        <span class="text-brand-accent">Just Ask EcoBot!</span>
+                    </h2>
+                    <p class="text-slate-300 text-lg mb-8 leading-relaxed">
+                        Our smart AI assistant can identify recyclable materials, give you preparation tips, and even suggest creative upcycling ideas. Try asking:
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="setAiQuery('Can I recycle a pizza box?')" class="bg-white/10 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-full transition-colors border border-white/10">"Can I recycle a pizza box?"</button>
+                        <button onclick="setAiQuery('What about glass jars?')" class="bg-white/10 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-full transition-colors border border-white/10">"What about glass jars?"</button>
+                    </div>
+                </div>
+
+                <div class="md:w-1/2 w-full fade-in-section">
+                    <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="bg-gradient-to-tr from-brand-primary to-brand-accent p-3 rounded-xl shadow-lg">
+                                <i data-lucide="bot" class="text-white w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-bold text-xl">The RE Bot</h3>
+                                <p class="text-emerald-200 text-sm">Always online • AI Assistant</p>
+                            </div>
+                        </div>
+
+                        <!-- Response Area -->
+                        <div id="ai-response-area" class="bg-black/20 rounded-xl p-4 min-h-[120px] mb-4 border border-white/5 text-white">
+                            <p class="text-slate-300 text-center italic mt-6">"I'm ready! Ask me anything about recycling."</p>
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="relative">
+                            <input type="text" id="ai-input" placeholder="Type your question here..." class="w-full bg-white text-slate-800 placeholder-slate-300 pl-4 pr-14 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300 shadow-inner">
+                            <button onclick="handleAskAI()" id="ai-submit-btn" class="absolute right-2 top-2 bottom-2 bg-brand-primary hover:bg-emerald-700 text-white p-2.5 rounded-lg transition-colors flex items-center justify-center shadow-md disabled:bg-slate-300">
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Section -->
+    <section id="game" class="py-24 bg-brand-light">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12 fade-in-section">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-brand-primary text-sm font-bold border border-emerald-200 mb-6">
+                    <i data-lucide="gamepad-2" class="w-4 h-4"></i>
+                    <span>Mini Game</span>
+                </div>
+                <h2 class="text-4xl font-extrabold text-brand-dark mb-6">
+                    Play <span class="text-brand-primary">Recycle Rush</span>
+                </h2>
+                <p class="text-slate-600 text-lg max-w-2xl mx-auto">
+                    Test your sorting skills! Catch the green items 🍃⚡ and avoid the trash 🍎⚠️. 
+                    <br/><span class="text-sm font-semibold text-brand-primary">(Touch & Drag on screen to move)</span>
+                </p>
+            </div>
+
+            <div class="fade-in-section">
+                <div class="w-full max-w-md mx-auto bg-brand-dark rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-800 relative h-[500px] select-none" id="game-container">
+                    
+                    <!-- Game UI -->
+                    <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-start z-10 bg-gradient-to-b from-black/50 to-transparent text-white pointer-events-none">
+                        <div>
+                            <p class="text-xs text-emerald-300 font-bold uppercase tracking-wider">Score</p>
+                            <p class="text-3xl font-black font-mono" id="game-score">0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-slate-300 font-bold uppercase tracking-wider">High Score</p>
+                            <p class="text-xl font-mono" id="game-highscore">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Start Screen -->
+                    <div id="game-start-screen" class="absolute inset-0 bg-brand-dark/90 flex flex-col items-center justify-center text-center p-6 z-20 backdrop-blur-sm">
+                        <i data-lucide="gamepad-2" class="text-brand-accent w-16 h-16 mb-6 animate-bounce"></i>
+                        <h3 class="text-3xl font-black text-white mb-2">Recycle Rush</h3>
+                        <p class="text-slate-300 mb-8 max-w-[200px]">Catch recyclables 🍃. Avoid trash 🍎.</p>
+                        <button onclick="startGame()" class="bg-brand-primary hover:bg-emerald-300 text-white px-8 py-3 rounded-full font-bold text-lg shadow-lg shadow-emerald-500/30 transition-all transform hover:scale-105 active:scale-95">Start Game</button>
+                    </div>
+
+                    <!-- Game Over Screen -->
+                    <div id="game-over-screen" class="hidden absolute inset-0 bg-red-900/90 flex flex-col items-center justify-center text-center p-6 z-20 backdrop-blur-sm">
+                        <i data-lucide="alert-triangle" class="text-white w-16 h-16 mb-4"></i>
+                        <h3 class="text-3xl font-black text-white mb-2">Game Over!</h3>
+                        <div class="bg-black/30 p-4 rounded-2xl mb-6 w-full max-w-[200px]">
+                            <p class="text-slate-300 text-sm">Final Score</p>
+                            <p class="text-4xl font-mono font-bold text-emerald-300" id="final-score">0</p>
+                        </div>
+                        <button onclick="startGame()" class="bg-white text-slate-900 px-8 py-3 rounded-full font-bold text-lg shadow-lg flex items-center gap-2 transition-all transform hover:scale-105">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Try Again
+                        </button>
+                    </div>
+
+                    <!-- Game Play Area -->
+                    <div id="game-play-area" class="w-full h-full relative bg-slate-800/50 cursor-pointer overflow-hidden">
+                        <!-- Items will be injected here via JS -->
+                        
+                        <!-- Player (Truck) -->
+                        <div id="player-basket" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-brand-accent transition-transform duration-75">
+                            <i data-lucide="truck" class="w-12 h-12 drop-shadow-[0_0_15px_rgba(244,162,97,0.5)]"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem & Solution Section -->
+    <section class="py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in-section">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-red-600 text-sm font-bold border border-red-100 mb-6">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                    <span>The Problem</span>
+                </div>
+                <h2 class="text-4xl lg:text-5xl font-extrabold text-brand-dark mb-6">
+                    Egypt recycles less than <span class="text-red-500">20%</span> of its waste
+                </h2>
+                <p class="text-slate-600 text-lg max-w-2xl mx-auto leading-relaxed">
+                    Over 90 million tons of solid waste are generated annually, with most ending up in landfills. The lack of incentive and infrastructure keeps recycling rates dangerously low.
+                </p>
+            </div>
+
+            <div class="flex justify-center mb-16 fade-in-section">
+                <div class="h-16 w-1 bg-gradient-to-b from-slate-200 to-emerald-200"></div>
+            </div>
+
+            <div class="text-center fade-in-section">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-light text-brand-primary text-sm font-bold border border-emerald-100 mb-6">
+                    <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
+                    <span>The Solution</span>
+                </div>
+                <h2 class="text-4xl lg:text-5xl font-extrabold text-brand-dark mb-6">
+                    The RE makes recycling <span class="text-brand-primary">rewarding</span>
+                </h2>
+                <p class="text-slate-600 text-lg max-w-2xl mx-auto leading-relaxed">
+                    We combine smart kiosk technology with a gamified rewards system. Users earn real points for every recyclable they deposit — redeemable for discounts, mobile credit, or charitable donations.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-24 bg-brand-light">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-20 fade-in-section">
+                <h2 class="text-4xl font-bold text-brand-dark mb-4">How It <span class="text-brand-primary">Works</span></h2>
+                <p class="text-slate-600 text-lg">Four simple steps to start earning rewards for recycling.</p>
+            </div>
+
+            <div class="relative">
+                <!-- Line -->
+                <div class="hidden md:block absolute top-1/2 left-0 w-full h-1 bg-emerald-200 -translate-y-1/2 z-0"></div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
+                    <!-- Step 1 -->
+                    <div class="flex flex-col items-center text-center group fade-in-section">
+                        <div class="w-10 h-10 rounded-full bg-brand-primary text-white font-bold flex items-center justify-center mb-4 border-4 border-white shadow-lg relative z-20">1</div>
+                        <div class="bg-white p-8 rounded-3xl group-hover:bg-brand-light transition-colors w-full h-full border border-slate-100 group-hover:border-emerald-100">
+                            <div class="w-16 h-16 bg-brand-light text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                <i data-lucide="users" class="w-7 h-7"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-brand-dark mb-3">Sign Up</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed">Create your account and get your unique QR code in seconds.</p>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="flex flex-col items-center text-center group fade-in-section" style="transition-delay: 100ms;">
+                        <div class="w-10 h-10 rounded-full bg-brand-primary text-white font-bold flex items-center justify-center mb-4 border-4 border-white shadow-lg relative z-20">2</div>
+                        <div class="bg-white p-8 rounded-3xl group-hover:bg-brand-light transition-colors w-full h-full border border-slate-100 group-hover:border-emerald-100">
+                            <div class="w-16 h-16 bg-brand-light text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                <i data-lucide="map-pin" class="w-7 h-7"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-brand-dark mb-3">Find a Kiosk</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed">Use the interactive map to locate nearby smart recycling kiosks.</p>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex flex-col items-center text-center group fade-in-section" style="transition-delay: 200ms;">
+                        <div class="w-10 h-10 rounded-full bg-brand-primary text-white font-bold flex items-center justify-center mb-4 border-4 border-white shadow-lg relative z-20">3</div>
+                        <div class="bg-white p-8 rounded-3xl group-hover:bg-brand-light transition-colors w-full h-full border border-slate-100 group-hover:border-emerald-100">
+                            <div class="w-16 h-16 bg-brand-light text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                <i data-lucide="scan-line" class="w-7 h-7"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-brand-dark mb-3">Deposit & Scan</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed">Drop your recyclables into the kiosk and scan your QR code.</p>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="flex flex-col items-center text-center group fade-in-section" style="transition-delay: 300ms;">
+                        <div class="w-10 h-10 rounded-full bg-brand-primary text-white font-bold flex items-center justify-center mb-4 border-4 border-white shadow-lg relative z-20">4</div>
+                        <div class="bg-white p-8 rounded-3xl group-hover:bg-brand-light transition-colors w-full h-full border border-slate-100 group-hover:border-emerald-100">
+                            <div class="w-16 h-16 bg-brand-light text-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                <i data-lucide="gift" class="w-7 h-7"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-brand-dark mb-3">Earn & Redeem</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed">Collect points and redeem for discounts, mobile credit, or donations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid (Here is the section you asked about!) -->
+    <section id="features" class="py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in-section">
+                <h2 class="text-4xl font-bold text-brand-dark mb-4">Packed with <span class="text-brand-primary">Features</span></h2>
+                <p class="text-slate-600 text-lg">Everything you need to make recycling easy, fun, and rewarding.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Features List -->
+                <div class="bg-brand-light p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-lg transition-all hover:-translate-y-1 fade-in-section">
+                    <div class="w-12 h-12 bg-white text-brand-primary rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="star" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Points & Rewards</h3>
+                    <p class="text-slate-600 leading-relaxed">Earn points for every recyclable and redeem for real-world rewards.</p>
+                </div>
+                <div class="bg-brand-light p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-lg transition-all hover:-translate-y-1 fade-in-section">
+                    <div class="w-12 h-12 bg-white text-brand-primary rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="map-pin" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Interactive Kiosk Map</h3>
+                    <p class="text-slate-600 leading-relaxed">Find nearby smart kiosks with real-time availability status.</p>
+                </div>
+                <div class="bg-brand-light p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-lg transition-all hover:-translate-y-1 fade-in-section">
+                    <div class="w-12 h-12 bg-white text-brand-primary rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="trophy" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Gamification</h3>
+                    <p class="text-slate-600 leading-relaxed">Unlock ranks, earn badges, and climb through levels as you recycle.</p>
+                </div>
+                <div class="bg-brand-light p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-lg transition-all hover:-translate-y-1 fade-in-section">
+                    <div class="w-12 h-12 bg-white text-brand-primary rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Leaderboards</h3>
+                    <p class="text-slate-600 leading-relaxed">Compete with friends and your community to top the charts.</p>
+                </div>
+                <div class="bg-brand-light p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-lg transition-all hover:-translate-y-1 fade-in-section">
+                    <div class="w-12 h-12 bg-white text-brand-primary rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="truck" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">On-Demand Collection</h3>
+                    <p class="text-slate-600 leading-relaxed">Schedule a pickup from your doorstep for larger recyclables.</p>
+                </div>
+                <div class="bg-brand-light p-8 rounded-2xl shadow-sm border border-emerald-100 hover:shadow-lg transition-all hover:-translate-y-1 fade-in-section">
+                    <div class="w-12 h-12 bg-white text-brand-primary rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="share-2" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark mb-3">Referral Program</h3>
+                    <p class="text-slate-600 leading-relaxed">Invite friends and earn bonus points for every sign-up.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Impact -->
+    <section id="community" class="py-24 bg-gradient-to-br from-brand-primary to-brand-dark text-white relative overflow-hidden">
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-16 fade-in-section">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">Our Community Impact</h2>
+                <p class="text-emerald-100 text-lg">Together, we're making a measurable difference for the planet.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-12 mb-20">
+                <!-- Stat 1 -->
+                <div class="flex flex-col items-center fade-in-section">
+                    <div class="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
+                        <i data-lucide="leaf" class="text-emerald-200 w-10 h-10"></i>
+                    </div>
+                    <div class="text-5xl font-extrabold mb-2 count-up" data-target="125000" data-suffix="+">0</div>
+                    <div class="text-emerald-200 font-bold mb-1">Bottles Recycled</div>
+                    <div class="text-sm text-emerald-100 opacity-80">Plastic bottles diverted from landfills</div>
+                </div>
+                <!-- Stat 2 -->
+                <div class="flex flex-col items-center fade-in-section" style="transition-delay: 100ms;">
+                    <div class="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
+                        <i data-lucide="truck" class="text-emerald-200 w-10 h-10"></i>
+                    </div>
+                    <div class="text-5xl font-extrabold mb-2 count-up" data-target="48" data-suffix=" tons">0</div>
+                    <div class="text-emerald-200 font-bold mb-1">CO₂ Saved</div>
+                    <div class="text-sm text-emerald-100 opacity-80">Carbon emissions prevented</div>
+                </div>
+                <!-- Stat 3 -->
+                <div class="flex flex-col items-center fade-in-section" style="transition-delay: 200ms;">
+                    <div class="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm">
+                        <i data-lucide="trees" class="text-emerald-200 w-10 h-10"></i>
+                    </div>
+                    <div class="text-5xl font-extrabold mb-2 count-up" data-target="2300" data-suffix="+">0</div>
+                    <div class="text-emerald-200 font-bold mb-1">Trees Equivalent</div>
+                    <div class="text-sm text-emerald-100 opacity-80">Environmental impact in tree equivalents</div>
+                </div>
+            </div>
+
+            <!-- Impact Calculator -->
+            <div class="max-w-2xl mx-auto bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 fade-in-section">
+                <div class="flex items-center justify-center gap-3 mb-6">
+                    <div class="bg-brand-primary p-2 rounded-lg text-emerald-300">
+                        <i data-lucide="calculator" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold">See Your Personal Impact ✨</h3>
+                </div>
+                <p class="text-center text-emerald-100 mb-6">Curious about your contribution? Enter what you've recycled recently (e.g., "50 plastic bottles")!</p>
+                <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                    <input type="text" id="impact-input" placeholder="E.g., 20 cans, 5kg of paper..." class="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-emerald-200/50 focus:outline-none focus:bg-white/20 transition-all">
+                    <button onclick="calculateImpact()" class="bg-white text-brand-dark px-6 py-3 rounded-xl font-bold hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="zap" class="w-5 h-5"></i> Calculate
+                    </button>
+                </div>
+                <div id="impact-result" class="hidden bg-brand-dark/50 rounded-xl p-4 border border-emerald-500/30">
+                    <p class="text-emerald-100 text-center leading-relaxed font-medium" id="impact-text"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partners Section -->
+    <section id="partners" class="py-24 bg-white">
+        <div class="container mx-auto px-6 text-center">
+            <div class="fade-in-section">
+                <h2 class="text-4xl font-bold text-brand-dark mb-4">Our <span class="text-brand-primary">Partners</span></h2>
+                <p class="text-slate-500 text-lg mb-16">Leading brands supporting sustainable recycling in Egypt.</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-16">
+                    <!-- Partner Cards -->
+                    <div class="bg-brand-light h-24 rounded-lg flex items-center justify-center hover:shadow-md transition-all cursor-pointer group">
+                        <span class="text-xl font-bold text-red-600 tracking-tight group-hover:scale-105 transition-transform">Vodafone</span>
+                    </div>
+                    <div class="bg-brand-light h-24 rounded-lg flex items-center justify-center hover:shadow-md transition-all cursor-pointer group">
+                        <span class="text-xl font-bold text-blue-700 group-hover:scale-105 transition-transform">Carrefour</span>
+                    </div>
+                    <div class="bg-brand-light h-24 rounded-lg flex items-center justify-center hover:shadow-md transition-all cursor-pointer group">
+                        <span class="text-xl font-bold text-black tracking-widest group-hover:scale-105 transition-transform">Uber</span>
+                    </div>
+                    <div class="bg-brand-light h-24 rounded-lg flex items-center justify-center hover:shadow-md transition-all cursor-pointer group">
+                        <span class="text-xl font-bold text-orange-500 italic group-hover:scale-105 transition-transform">Talabat</span>
+                    </div>
+                    <div class="bg-brand-light h-24 rounded-lg flex items-center justify-center hover:shadow-md transition-all cursor-pointer group">
+                        <span class="text-xl font-bold text-slate-800 group-hover:scale-105 transition-transform">Jumia</span>
+                    </div>
+                    <div class="bg-brand-light h-24 rounded-lg flex items-center justify-center hover:shadow-md transition-all cursor-pointer group">
+                        <span class="text-xl font-bold text-slate-900 flex items-center gap-1 group-hover:scale-105 transition-transform">
+                            amazon <span class="text-orange-300 text-2xl leading-3">◡</span>
+                        </span>
+                    </div>
+                </div>
+
+                <p class="text-slate-600 mb-8">Want to partner with The RE?</p>
+                <button class="bg-white border border-slate-300 text-slate-700 px-8 py-3 rounded-full font-semibold hover:border-brand-primary hover:text-brand-primary transition-colors hover:shadow-lg">Become a Partner</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer (Dark Green Background from branding) -->
+    <footer class="bg-brand-dark text-white pt-16 pb-8">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-3 gap-12 mb-12">
+                <div class="space-y-6">
+                    <div class="flex items-center gap-2">
+                        <img src="./logo_white.png" alt="The RE Logo" class="h-10 w-auto object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div style="display:none" class="flex items-center gap-2"><i data-lucide="recycle"></i> <span class="font-bold text-xl">The RE</span></div>
+                    </div>
+                    <p class="text-gray-300 text-sm leading-relaxed max-w-sm">
+                        Turning waste into value. Egypt's first gamified recycling and rewards platform powered by smart kiosk technology.
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="https://www.facebook.com/share/1DahdihYQb/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-brand-accent transition-colors"><i data-lucide="facebook"></i></a>
+                        <a href="https://www.instagram.com/there_egypt?igsh=MWpoMWV0em5qMmQ1NA==" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-brand-accent transition-colors"><i data-lucide="instagram"></i></a>
+                        <a href="#" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-brand-accent transition-colors"><i data-lucide="linkedin"></i></a>
+                        <a href="#" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-brand-accent transition-colors"><i data-lucide="twitter"></i></a>
+                        <a href="#" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-brand-accent transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tiktok"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-white text-lg mb-6">Quick Links</h4>
+                    <ul class="space-y-4 text-gray-300 text-sm">
+                        <li><a href="#" class="hover:text-brand-accent transition-colors">About</a></li>
+                        <li><a href="#how-it-works" class="hover:text-brand-accent transition-colors">How It Works</a></li>
+                        <li><a href="#features" class="hover:text-brand-accent transition-colors">Features</a></li>
+                        <li><a href="#partners" class="hover:text-brand-accent transition-colors">Partners</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-white text-lg mb-6">Get the App</h4>
+                    <p class="text-gray-300 text-sm mb-6">Download The RE on your mobile device and start recycling today.</p>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button class="bg-white text-brand-accent px-6 py-3 rounded-full font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors">
+                            <i data-lucide="play" class="w-4 h-4 fill-current"></i> Google Play
+                        </button>
+                        <button class="bg-transparent border border-white-500 text-white px-6 py-3 rounded-full font-bold text-sm flex items-center justify-center gap-2 hover:text-brand-accent transition-colors">
+                            <i data-lucide="apple" class="w-4 h-4 fill-current"></i> App Store
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-white-500 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-brand-accent">
+                <p>&copy; 2026 The RE. All rights reserved.</p>
+                <div class="flex gap-6 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <button id="go-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+            class="fixed bottom-8 right-8 bg-brand-accent hover:bg-brand-primary text-white p-3 rounded-full shadow-2xl translate-y-20 opacity-0 transition-all duration-500 z-50 flex items-center justify-center border-2 border-white/20 group">
+        <i data-lucide="arrow-up" class="w-6 h-6 group-hover:-translate-y-1 transition-transform"></i>
+    </button>
+
+    <script>
+        // --- Init Icons ---
+        lucide.createIcons();
+
+        // --- Navbar Logic ---
+        const navbar = document.getElementById('navbar');
+        const goTopBtn = document.getElementById('go-top-btn'); // New Button
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) {
+                navbar.classList.add('bg-white/95', 'backdrop-blur-md', 'shadow-sm', 'py-3');
+                navbar.classList.remove('py-4');
+            } else {
+                navbar.classList.remove('bg-white/95', 'backdrop-blur-md', 'shadow-sm', 'py-3');
+                navbar.classList.add('py-4');
+            }
+
+            // --- Toggle Go Top Button ---
+            if (window.scrollY > 500) {
+                goTopBtn.classList.remove('translate-y-20', 'opacity-0');
+            } else {
+                goTopBtn.classList.add('translate-y-20', 'opacity-0');
+            }
+        });
+
+        function toggleMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
+            menu.classList.toggle('hidden');
+            // Toggle icon (optional, simplistic approach)
+            if(menu.classList.contains('hidden')) {
+               icon.setAttribute('data-lucide', 'menu'); 
+            } else {
+               icon.setAttribute('data-lucide', 'x'); 
+            }
+            lucide.createIcons();
+        }
+
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('mobile-menu').classList.add('hidden');
+        }
+
+        // --- Scroll Animations (Fade In) ---
+        const observerOptions = { threshold: 0.1 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    // Trigger number animation if it's a counter
+                    if(entry.target.classList.contains('count-up')) animateValue(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in-section, .count-up').forEach(el => observer.observe(el));
+
+        // --- Number Animation ---
+        function animateValue(obj) {
+            if (obj.getAttribute('data-animated') === 'true') return;
+            obj.setAttribute('data-animated', 'true');
+            
+            const target = parseInt(obj.getAttribute('data-target'));
+            const suffix = obj.getAttribute('data-suffix') || '';
+            const duration = 2000;
+            let startTimestamp = null;
+
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                // Ease out quart
+                const ease = 1 - Math.pow(1 - progress, 4);
+                obj.innerHTML = Math.floor(ease * target).toLocaleString() + suffix;
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // --- AI Logic (EcoBot & Calculator) ---
+        const apiKey = "AIzaSyDfueYQ-y1eWi6WULblv07tX2DNDiLG6mg"; // API Key provided by runtime
+
+        async function callGemini(prompt, outputId, loadingId = null) {
+            const output = document.getElementById(outputId);
+            if(loadingId) document.getElementById(loadingId).classList.add('animate-spin');
+            
+            try {
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+                    }
+                );
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(text) {
+                    output.innerText = text;
+                    output.parentElement.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                output.innerText = "Sorry, I'm having trouble connecting right now.";
+            } finally {
+                if(loadingId) document.getElementById(loadingId).classList.remove('animate-spin');
+            }
+        }
+
+        function setAiQuery(text) {
+            document.getElementById('ai-input').value = text;
+            handleAskAI();
+        }
+
+        function handleAskAI() {
+            const query = document.getElementById('ai-input').value;
+            if(!query) return;
+            
+            // Clear previous response
+            const responseArea = document.getElementById('ai-response-area');
+            responseArea.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Thinking...</div>`;
+            lucide.createIcons();
+
+            const prompt = `You are 'EcoBot', the friendly AI assistant for 'The RE' recycling platform in Egypt. 
+            We accept: Plastic, Glass, and Metal cans. We do NOT accept: Paper, Food, or Organic waste.
+            User Query: "${query}". Keep the tone fun and encouraging. Use emojis. Keep response under 60 words.`;
+            
+            callGemini(prompt, 'ai-response-area');
+        }
+
+        function calculateImpact() {
+            const input = document.getElementById('impact-input').value;
+            if(!input) return;
+            const prompt = `User recycled: "${input}". Estimate environmental savings (energy, CO2, trees) and write a fun, motivating 1-2 sentence statement. Example: "Recycling 20 bottles saves enough energy to power a laptop for 50 hours!"`;
+            callGemini(prompt, 'impact-text');
+            document.getElementById('impact-result').classList.remove('hidden');
+        }
+
+        // --- Recycle Rush Game Logic ---
+        let gameActive = false;
+        let score = 0;
+        let highScore = 0;
+        let basketX = 50; // percentage
+        let items = [];
+        let gameLoop;
+        let spawnInterval;
+        const gameContainer = document.getElementById('game-play-area');
+        const containerFrame = document.getElementById('game-container'); // Wrapper for touch blocking
+        const basket = document.getElementById('player-basket');
+
+        // Input Handling
+        const handleMove = (e) => {
+            if(!gameActive) return;
+            // Prevent scrolling ONLY when game is active
+            e.preventDefault(); 
+            
+            const rect = gameContainer.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let x = clientX - rect.left;
+            let percent = (x / rect.width) * 100;
+            basketX = Math.max(5, Math.min(95, percent));
+            basket.style.left = `${basketX}%`;
+        };
+        
+        // Add listeners but they only do work if gameActive is true
+        gameContainer.addEventListener('mousemove', handleMove);
+        gameContainer.addEventListener('touchmove', handleMove, { passive: false });
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            items = [];
+            
+            // FIXED: Add touch-none to prevent scrolling ONLY when game starts
+            containerFrame.classList.add('touch-none');
+            
+            document.getElementById('game-score').innerText = score;
+            document.getElementById('game-start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            
+            // Clear existing items
+            document.querySelectorAll('.game-item').forEach(el => el.remove());
+
+            gameLoop = requestAnimationFrame(updateGame);
+            spawnInterval = setInterval(spawnItem, 1000);
+        }
+
+        function spawnItem() {
+            if(!gameActive) return;
+            const type = Math.random() > 0.3 ? 'good' : 'bad';
+            const iconName = type === 'good' ? (Math.random() > 0.5 ? 'leaf' : 'zap') : 'apple';
+            const color = type === 'good' ? 'text-emerald-300' : 'text-red-500';
+            
+            const el = document.createElement('div');
+            el.className = `game-item ${color}`;
+            el.innerHTML = `<i data-lucide="${iconName}" class="w-8 h-8"></i>`;
+            el.style.left = `${Math.random() * 80 + 10}%`;
+            el.style.top = '-40px';
+            
+            gameContainer.appendChild(el);
+            lucide.createIcons(); // render icon inside
+
+            items.push({
+                el: el,
+                y: -10,
+                x: parseFloat(el.style.left),
+                speed: 0.5 + Math.random() * 0.5,
+                type: type
+            });
+        }
+
+        function updateGame() {
+            if(!gameActive) return;
+
+            items.forEach((item, index) => {
+                item.y += item.speed;
+                item.el.style.top = `${item.y}%`;
+
+                // Collision Detection
+                if(item.y > 80 && item.y < 90) {
+                    if(Math.abs(item.x - basketX) < 10) {
+                        // Hit
+                        if(item.type === 'good') {
+                            score += 10;
+                            document.getElementById('game-score').innerText = score;
+                            item.el.remove();
+                            items.splice(index, 1);
+                        } else {
+                            gameOver();
+                        }
+                    }
+                }
+                
+                // Remove out of bounds
+                if(item.y > 100) {
+                    item.el.remove();
+                    items.splice(index, 1);
+                }
+            });
+
+            if(gameActive) requestAnimationFrame(updateGame);
+        }
+
+        function gameOver() {
+            gameActive = false;
+            clearInterval(spawnInterval);
+            cancelAnimationFrame(gameLoop);
+            
+            // FIXED: Remove touch-none so scrolling returns
+            containerFrame.classList.remove('touch-none');
+            
+            if(score > highScore) {
+                highScore = score;
+                document.getElementById('game-highscore').innerText = highScore;
+            }
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>
