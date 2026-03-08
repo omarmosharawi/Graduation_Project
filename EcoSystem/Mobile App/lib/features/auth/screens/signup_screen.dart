@@ -11,6 +11,7 @@ import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/firebase_auth_service.dart';
 import '../../../core/widgets/auth_background.dart';
+import '../../../core/utils/validation_utils.dart';
 
 /// SignupScreen handles new user registration
 class SignupScreen extends StatefulWidget {
@@ -63,6 +64,9 @@ class _SignupScreenState extends State<SignupScreen> {
       name: fullName,
       email: _emailController.text.trim(),
       password: _passwordController.text,
+      phone: _phoneController.text.trim().isNotEmpty
+          ? _phoneController.text.trim()
+          : null,
     );
 
     if (!mounted) return;
@@ -70,11 +74,13 @@ class _SignupScreenState extends State<SignupScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Account created successfully! 🎉'),
+          content: Text('Account created! Please verify your email.'),
           backgroundColor: AppColors.success,
         ),
       );
-      context.go(RoutePaths.home);
+      // Navigate to OTP verification screen
+      final email = Uri.encodeComponent(_emailController.text.trim());
+      context.push('${RoutePaths.otpVerification}?email=$email');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -193,11 +199,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       controller: _emailController,
                       hintText: 'Enter your email',
                       keyboardType: TextInputType.emailAddress,
-                      validator: (v) {
-                        if (v!.isEmpty) return 'Required';
-                        if (!v.contains('@')) return 'Invalid email';
-                        return null;
-                      },
+                      validator: ValidationUtils.validateEmail,
                     ),
                     const SizedBox(height: 12),
 
@@ -215,11 +217,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
-                      validator: (v) {
-                        if (v!.isEmpty) return 'Required';
-                        if (v.length < 6) return 'Min 6 characters';
-                        return null;
-                      },
+                      validator: ValidationUtils.validateStrongPassword,
                     ),
                     const SizedBox(height: 12),
 
@@ -237,10 +235,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                       ),
-                      validator: (v) {
-                        if (v != _passwordController.text) return 'Passwords don\'t match';
-                        return null;
-                      },
+                      validator: (v) => ValidationUtils.validateConfirmPassword(v, _passwordController.text),
                     ),
                     const SizedBox(height: 12),
 

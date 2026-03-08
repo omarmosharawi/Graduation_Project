@@ -4,7 +4,7 @@
 // =============================================================================
 // POST /api/kiosk/{kioskId}/status
 // Headers: X-API-Key: your-secret-key
-// Body: { "status": "available" | "maintenance" | "offline" }
+// Body: { "status": "available" | "maintenance" | "offline" | "full" | "out_of_service", "currentCapacity"?: int }
 // =============================================================================
 
 // Verify API key for ESP32 authentication
@@ -13,7 +13,7 @@ verifyApiKey();
 validateRequired($body, ['status']);
 
 $status = $body['status'];
-$validStatuses = ['available', 'maintenance', 'offline'];
+$validStatuses = ['available', 'maintenance', 'offline', 'full', 'out_of_service'];
 
 if (!in_array($status, $validStatuses)) {
     http_response_code(400);
@@ -24,10 +24,17 @@ if (!in_array($status, $validStatuses)) {
 }
 
 try {
-    $success = updateFirestoreDoc('kiosks', $kioskId, [
+    $updateData = [
         'status' => $status,
         'lastUpdated' => date('c') // ISO 8601 format
-    ]);
+    ];
+
+    // Optional: update current capacity if provided
+    if (isset($body['currentCapacity'])) {
+        $updateData['currentCapacity'] = (int) $body['currentCapacity'];
+    }
+
+    $success = updateFirestoreDoc('kiosks', $kioskId, $updateData);
 
     if ($success) {
         response([

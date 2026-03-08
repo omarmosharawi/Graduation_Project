@@ -3,6 +3,8 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/firebase_auth_service.dart';
@@ -41,7 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _lastNameController = TextEditingController(text: lastName);
     _emailController = TextEditingController(text: user?.email ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
-    _addressController = TextEditingController(text: '');
+    _addressController = TextEditingController(text: user?.address ?? '');
   }
 
   @override
@@ -97,14 +99,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           )
                         : null,
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.background, width: 2),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: InkWell(
+                      onTap: _pickImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.background, width: 2),
+                        ),
+                        child: const Icon(Icons.camera_alt, size: 20),
+                      ),
                     ),
-                    child: const Icon(Icons.camera_alt, size: 20),
                   ),
                 ],
               ),
@@ -125,6 +134,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: _buildTextField(
                       controller: _firstNameController,
                       label: 'First Name',
+                      validator: (value) => value == null || value.isEmpty ? 'First name is required' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -132,6 +142,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: _buildTextField(
                       controller: _lastNameController,
                       label: 'Last Name',
+                      validator: (value) => value == null || value.isEmpty ? 'Last name is required' : null,
                     ),
                   ),
                 ],
@@ -143,6 +154,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 controller: _emailController,
                 label: 'Email',
                 readOnly: isGoogleUser,
+                validator: (value) => value == null || value.isEmpty ? 'Email is required' : null,
                 suffixIcon: isGoogleUser
                     ? const Icon(Icons.lock, size: 18, color: AppColors.textHint)
                     : null,
@@ -161,6 +173,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 controller: _phoneController,
                 label: 'Phone number',
                 keyboardType: TextInputType.phone,
+                validator: (value) => value == null || value.isEmpty ? 'Phone number is required' : null,
               ),
               const SizedBox(height: 16),
 
@@ -168,6 +181,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               _buildTextField(
                 controller: _addressController,
                 label: 'Full Address',
+                validator: (value) => value == null || value.isEmpty ? 'Address is required' : null,
               ),
               const SizedBox(height: 16),
 
@@ -226,6 +240,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String? initialValue,
     Widget? suffixIcon,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
@@ -233,6 +248,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       readOnly: readOnly,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      validator: validator,
       decoration: InputDecoration(
         labelText: label,
         filled: true,
@@ -297,6 +313,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+
+    if (image != null && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        final authService = context.read<FirebaseAuthService>();
+        final url = await authService.uploadProfilePicture(File(image.path));
+        
+        if (mounted) {
+          if (url != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile picture updated!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to upload profile picture. Please check your connection or Firebase Storage setup.'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to upload image: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _sendVerificationEmail() async {
     final authService = context.read<FirebaseAuthService>();
     final success = await authService.sendEmailVerification();
@@ -326,7 +387,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       
       await authService.updateUserProfile(
         name: fullName,
-        phone: _phoneController.text.isNotEmpty ? _phoneController.text : null,
+        phone: _phoneController.text,
+        address: _addressController.text,
       );
 
       if (mounted) {

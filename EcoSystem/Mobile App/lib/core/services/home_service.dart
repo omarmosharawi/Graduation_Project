@@ -13,12 +13,27 @@ class HomeService {
   Stream<List<HomeCard>> getHomeCardsStream() {
     return _cardsCollection
         .where('isActive', isEqualTo: true)
-        .orderBy('priority', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
+      var cards = snapshot.docs.map((doc) {
         return HomeCard.fromMap(doc.data() as Map<String, dynamic>, doc.id);
       }).toList();
+      cards.sort((a, b) => b.priority.compareTo(a.priority));
+      return cards;
+    });
+  }
+
+  // Stream of all home cards for admin (no composite index required)
+  Stream<List<HomeCard>> getAdminHomeCardsStream() {
+    return _cardsCollection
+        .snapshots()
+        .map((snapshot) {
+      var cards = snapshot.docs.map((doc) {
+        return HomeCard.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+      }).toList();
+      // Sort manually to avoid needing a composite index on Firestore 
+      cards.sort((a, b) => b.priority.compareTo(a.priority));
+      return cards;
     });
   }
 

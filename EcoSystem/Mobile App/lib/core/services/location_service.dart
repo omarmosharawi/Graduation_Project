@@ -5,7 +5,6 @@
 // =============================================================================
 
 import 'package:geolocator/geolocator.dart';
-import 'dart:math' as math;
 import '../utils/logger.dart';
 
 /// Location Service for GPS and distance calculations
@@ -31,6 +30,8 @@ class LocationService {
 
     // Check current permission status
     permission = await Geolocator.checkPermission();
+    
+    // Request permission if not already granted
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
@@ -39,13 +40,16 @@ class LocationService {
       }
     }
 
+    // Handle permanent denial
     if (permission == LocationPermission.deniedForever) {
-      AppLogger.warning('Location permission permanently denied');
+      AppLogger.warning('Location permission permanently denied. Direction to settings required.');
+      // Optionally could show a dialog here or return something to trigger one
       return false;
     }
 
-    AppLogger.info('Location permission granted');
-    return true;
+    // Successful permission
+    AppLogger.info('Location permission granted: $permission');
+    return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
   }
 
   /// Get current location

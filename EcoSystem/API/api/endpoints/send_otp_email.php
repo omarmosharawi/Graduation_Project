@@ -41,12 +41,16 @@ $message = "
 // Headers
 $headers = "MIME-Version: 1.0" . "\r\n";
 $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-$headers .= "From: REward App <no-reply@" . $_SERVER['SERVER_NAME'] . ">" . "\r\n";
+$headers .= "From: REward App <no-reply@reward.ibrahim-azab.com>" . "\r\n";
 
 // Send Email
-if(mail($email, $subject, $message, $headers)) {
-    response(['success' => true, 'message' => 'OTP sent successfully']);
+if (mail($email, $subject, $message, $headers)) {
+  response(['success' => true, 'message' => 'OTP sent successfully']);
 } else {
-    http_response_code(500);
-    response(['error' => 'Failed to send email. Check SMTP or server mail settings.']);
+  $error = error_get_last();
+  http_response_code(500);
+  response([
+    'error' => 'Failed to send email.',
+    'details' => $error['message'] ?? 'Check SMTP or server mail settings.'
+  ]);
 }

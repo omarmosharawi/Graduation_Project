@@ -58,7 +58,7 @@ class _ProfileCompletionCheckerState extends State<ProfileCompletionChecker> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _ProfileCompletionDialog(
+      builder: (context) => ProfileCompletionDialog(
         isProfileIncomplete: isProfileIncomplete,
         needsEmailVerification: needsEmailVerification,
       ),
@@ -69,20 +69,20 @@ class _ProfileCompletionCheckerState extends State<ProfileCompletionChecker> {
   Widget build(BuildContext context) => widget.child;
 }
 
-class _ProfileCompletionDialog extends StatefulWidget {
+class ProfileCompletionDialog extends StatefulWidget {
   final bool isProfileIncomplete;
   final bool needsEmailVerification;
 
-  const _ProfileCompletionDialog({
+  const ProfileCompletionDialog({
     required this.isProfileIncomplete,
     required this.needsEmailVerification,
   });
 
   @override
-  State<_ProfileCompletionDialog> createState() => _ProfileCompletionDialogState();
+  State<ProfileCompletionDialog> createState() => _ProfileCompletionDialogState();
 }
 
-class _ProfileCompletionDialogState extends State<_ProfileCompletionDialog> {
+class _ProfileCompletionDialogState extends State<ProfileCompletionDialog> {
   bool _sendingEmail = false;
   bool _emailSent = false;
 
@@ -122,7 +122,7 @@ class _ProfileCompletionDialogState extends State<_ProfileCompletionDialog> {
           if (widget.isProfileIncomplete)
             _buildCheckItem(
               icon: Icons.person_outline,
-              text: 'Add your name and phone number',
+              text: 'Add your name, phone and address',
               isComplete: false,
             ),
           

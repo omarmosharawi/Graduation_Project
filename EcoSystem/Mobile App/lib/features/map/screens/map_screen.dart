@@ -6,14 +6,16 @@
 // Features:
 // - Google Maps integration
 // - Current location display
-// - Real-time kiosk status from Firestore
-// - Kiosk info bottom sheet
+// - Real-time kiosk status from Firestore (available, full, maintenance, offline, out_of_service)
+// - Color-coded markers with status legend
+// - Kiosk info bottom sheet with capacity progress bar
 // - Distance calculation
 // =============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/kiosk_service.dart';
 import '../../../core/services/location_service.dart';
@@ -53,6 +55,14 @@ class _MapScreenState extends State<MapScreen> {
     final position = await _locationService.getCurrentLocation();
     if (mounted && position != null) {
       setState(() => _userPosition = position);
+      
+      // Auto-center map on user
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(position.latitude, position.longitude),
+          14,
+        ),
+      );
     }
   }
 
@@ -97,11 +107,21 @@ class _MapScreenState extends State<MapScreen> {
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
                 mapToolbarEnabled: false,
+                onTap: (_) {
+                  setState(() => _selectedKiosk = null);
+                },
               ),
               
               // Loading indicator
               if (snapshot.connectionState == ConnectionState.waiting)
                 const Center(child: CircularProgressIndicator()),
+
+              // Status Legend
+              Positioned(
+                top: 12,
+                left: 12,
+                child: _buildStatusLegend(),
+              ),
 
               // Kiosk List Panel
               Positioned(
@@ -126,15 +146,63 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Status Legend
+  // ---------------------------------------------------------------------------
+  Widget _buildStatusLegend() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _legendDot(const Color(0xFF4CAF50), 'Online'),
+          const SizedBox(width: 10),
+          _legendDot(const Color(0xFFFFC107), 'Full'),
+          const SizedBox(width: 10),
+          _legendDot(const Color(0xFFFF9800), 'Maintenance'),
+          const SizedBox(width: 10),
+          _legendDot(const Color(0xFFF44336), 'Offline'),
+        ],
+      ),
+    );
+  }
+
+  Widget _legendDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Map Markers
+  // ---------------------------------------------------------------------------
   Set<Marker> _buildMarkers(List<Kiosk> kiosks) {
     return kiosks.map((kiosk) {
       return Marker(
         markerId: MarkerId(kiosk.id),
         position: LatLng(kiosk.latitude, kiosk.longitude),
         icon: BitmapDescriptor.defaultMarkerWithHue(
-          kiosk.isOperational 
-              ? BitmapDescriptor.hueGreen 
-              : BitmapDescriptor.hueOrange,
+          _getMarkerHue(kiosk.status),
         ),
         onTap: () {
           setState(() => _selectedKiosk = kiosk);
@@ -146,6 +214,25 @@ class _MapScreenState extends State<MapScreen> {
     }).toSet();
   }
 
+  double _getMarkerHue(String status) {
+    switch (status) {
+      case 'available':
+        return BitmapDescriptor.hueGreen;
+      case 'full':
+        return BitmapDescriptor.hueYellow;
+      case 'maintenance':
+        return BitmapDescriptor.hueOrange;
+      case 'offline':
+      case 'out_of_service':
+        return BitmapDescriptor.hueRed;
+      default:
+        return BitmapDescriptor.hueViolet;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Kiosk List Panel
+  // ---------------------------------------------------------------------------
   Widget _buildKioskListPanel(List<Kiosk> kiosks) {
     return Container(
       height: 160,
@@ -221,7 +308,7 @@ class _MapScreenState extends State<MapScreen> {
         );
       },
       child: Container(
-        width: 140,
+        width: 150,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -242,30 +329,55 @@ class _MapScreenState extends State<MapScreen> {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: kiosk.isOperational ? AppColors.success : AppColors.secondary,
+                    color: kiosk.statusColor,
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  kiosk.statusDisplay,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: kiosk.isOperational ? AppColors.success : AppColors.secondary,
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    kiosk.statusDisplay,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: kiosk.statusColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               kiosk.name,
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            // Mini capacity bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: kiosk.capacityPercent,
+                minHeight: 4,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  kiosk.capacityPercent > 0.9
+                      ? const Color(0xFFF44336)
+                      : kiosk.capacityPercent > 0.7
+                          ? const Color(0xFFFFC107)
+                          : const Color(0xFF4CAF50),
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${(kiosk.capacityPercent * 100).toInt()}% full',
+              style: TextStyle(fontSize: 9, color: AppColors.textHint),
             ),
           ],
         ),
@@ -273,6 +385,9 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Kiosk Info Card
+  // ---------------------------------------------------------------------------
   Widget _buildKioskInfoCard(Kiosk kiosk) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -291,7 +406,7 @@ class _MapScreenState extends State<MapScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Close button
+          // Header: status + close
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -301,7 +416,7 @@ class _MapScreenState extends State<MapScreen> {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: kiosk.isOperational ? AppColors.success : AppColors.secondary,
+                      color: kiosk.statusColor,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -310,7 +425,7 @@ class _MapScreenState extends State<MapScreen> {
                     kiosk.statusDisplay,
                     style: TextStyle(
                       fontSize: 12,
-                      color: kiosk.isOperational ? AppColors.success : AppColors.secondary,
+                      color: kiosk.statusColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -343,6 +458,40 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
           const SizedBox(height: 12),
+          // Capacity progress bar
+          Row(
+            children: [
+              const Icon(Icons.delete_outline, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: kiosk.capacityPercent,
+                    minHeight: 8,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      kiosk.capacityPercent > 0.9
+                          ? const Color(0xFFF44336)
+                          : kiosk.capacityPercent > 0.7
+                              ? const Color(0xFFFFC107)
+                              : const Color(0xFF4CAF50),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${kiosk.currentCapacity}/${kiosk.maxCapacity}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           // Stats row
           Row(
             children: [
@@ -356,12 +505,7 @@ class _MapScreenState extends State<MapScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: kiosk.isOperational ? () {
-                // Would open maps app for navigation
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Opening navigation...')),
-                );
-              } : null,
+              onPressed: kiosk.isOperational ? () => _openNavigation(kiosk) : null,
               icon: const Icon(Icons.directions),
               label: const Text('Get Directions'),
               style: ElevatedButton.styleFrom(
@@ -373,6 +517,27 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _openNavigation(Kiosk kiosk) async {
+    final String googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=${kiosk.latitude},${kiosk.longitude}';
+    final String appleMapsUrl = 'https://maps.apple.com/?daddr=${kiosk.latitude},${kiosk.longitude}';
+
+    try {
+      if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
+        await launchUrl(Uri.parse(googleMapsUrl), mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(Uri.parse(appleMapsUrl))) {
+        await launchUrl(Uri.parse(appleMapsUrl), mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch maps';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening maps: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildInfoChip(IconData icon, String text) {
@@ -400,9 +565,17 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _goToMyLocation() {
-    // In a real app, would use geolocator to get current location
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(_initialPosition, 14),
-    );
+    if (_userPosition != null) {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(_userPosition!.latitude, _userPosition!.longitude),
+          14,
+        ),
+      );
+    } else {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(_initialPosition, 14),
+      );
+    }
   }
 }

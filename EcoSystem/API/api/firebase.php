@@ -21,7 +21,7 @@ function getAccessToken()
     $header = base64_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
     $payload = base64_encode(json_encode([
         'iss' => $serviceAccount['client_email'],
-        'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
+        'scope' => 'https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/identitytoolkit https://www.googleapis.com/auth/cloud-platform',
         'aud' => 'https://oauth2.googleapis.com/token',
         'iat' => $now,
         'exp' => $now + 3600
@@ -166,10 +166,12 @@ function sendToDevice($fcmToken, $title, $body, $data = [])
 function getFirestoreDoc($collection, $docId)
 {
     $url = FIRESTORE_BASE_URL . "/$collection/$docId";
+    $accessToken = getAccessToken();
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
     $response = curl_exec($ch);
@@ -184,11 +186,52 @@ function getFirestoreDoc($collection, $docId)
 }
 
 /**
+ * Get all documents in a Firestore collection
+ */
+function getFirestoreCollection($collection)
+{
+    $url = FIRESTORE_BASE_URL . "/$collection";
+    $accessToken = getAccessToken();
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        return [];
+    }
+
+    $data = json_decode($response, true);
+    $documents = [];
+
+    if (isset($data['documents'])) {
+        foreach ($data['documents'] as $doc) {
+            $parsed = parseFirestoreDoc($doc);
+            if ($parsed) {
+                // Extract ID from name (e.g., "projects/id/databases/(default)/documents/collection/docId")
+                $nameParts = explode('/', $doc['name']);
+                $parsed['id'] = end($nameParts);
+                $documents[] = $parsed;
+            }
+        }
+    }
+
+    return $documents;
+}
+
+/**
  * Update Firestore document
  */
 function updateFirestoreDoc($collection, $docId, $fields)
 {
     $url = FIRESTORE_BASE_URL . "/$collection/$docId";
+    $accessToken = getAccessToken();
 
     // Convert to Firestore format
     $firestoreFields = [];
@@ -199,15 +242,19 @@ function updateFirestoreDoc($collection, $docId, $fields)
     $payload = ['fields' => $firestoreFields];
 
     // Build update mask
-    $updateMask = implode(',', array_map(function ($k) {
-        return "updateMask.fieldPaths=$k"; }, array_keys($fields)));
+    $updateMask = implode('&', array_map(function ($k) {
+        return "updateMask.fieldPaths=$k";
+    }, array_keys($fields)));
     $url .= "?$updateMask";
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $accessToken
+    ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
@@ -224,6 +271,8 @@ function updateFirestoreDoc($collection, $docId, $fields)
 function createFirestoreDoc($collection, $fields, $docId = null)
 {
     $url = FIRESTORE_BASE_URL . "/$collection";
+    $accessToken = getAccessToken();
+
     if ($docId) {
         $url .= "?documentId=$docId";
     }
@@ -240,7 +289,10 @@ function createFirestoreDoc($collection, $fields, $docId = null)
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $accessToken
+    ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
@@ -251,11 +303,12 @@ function createFirestoreDoc($collection, $fields, $docId = null)
     return $httpCode === 200;
 }
 
-/**
- * Format value for Firestore
- */
 function formatFirestoreValue($value)
 {
+    if (is_array($value) && isset($value['__firestore_timestamp'])) {
+        return ['timestampValue' => $value['__firestore_timestamp']];
+    }
+
     if (is_string($value)) {
         return ['stringValue' => $value];
     } elseif (is_int($value)) {
@@ -271,7 +324,6 @@ function formatFirestoreValue($value)
     }
     return ['stringValue' => (string) $value];
 }
-
 /**
  * Parse Firestore document to regular PHP array
  */

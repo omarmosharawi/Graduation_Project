@@ -37,6 +37,8 @@ import '../features/notifications/screens/notifications_screen.dart';
 import '../features/offers/screens/offers_screen.dart';
 import '../features/home/screens/plastic_metal_screen.dart';
 import '../features/admin/screens/admin_dashboard_screen.dart';
+import '../features/pickup/screens/pickup_request_screen.dart';
+import '../features/auth/screens/otp_verification_screen.dart';
 import '../core/widgets/main_scaffold.dart';
 
 /// -----------------------------------------------------------------------------
@@ -74,6 +76,8 @@ class RoutePaths {
   static const String about = '/about';
   static const String plasticMetal = '/plastic-metal';
   static const String editProfile = '/edit-profile';
+  static const String pickupRequest = '/pickup-request';
+  static const String otpVerification = '/auth/otp-verification';
 }
 
 /// -----------------------------------------------------------------------------
@@ -95,6 +99,7 @@ class RouteNames {
   static const String rankings = 'rankings';
   static const String map = 'map';
   static const String notifications = 'notifications';
+  static const String pickupRequest = 'pickupRequest';
 }
 
 /// -----------------------------------------------------------------------------
@@ -158,6 +163,13 @@ class AppRouter {
         path: RoutePaths.forgotPassword,
         name: RouteNames.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.otpVerification,
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return OtpVerificationScreen(email: email);
+        },
       ),
 
       // -----------------------------------------------------------------------
@@ -236,7 +248,16 @@ class AppRouter {
       ),
       GoRoute(
         path: RoutePaths.offers,
-        builder: (context, state) => const OffersScreen(),
+        builder: (context, state) {
+          final initialCategory = state.extra as String?;
+          final offerId = state.uri.queryParameters['offerId'];
+          final focusSearch = state.uri.queryParameters['focusSearch'] == 'true';
+          return OffersScreen(
+            initialCategory: initialCategory,
+            initialOfferId: offerId,
+            focusSearch: focusSearch,
+          );
+        },
       ),
       GoRoute(
         path: RoutePaths.adminDashboard,
@@ -257,6 +278,11 @@ class AppRouter {
       GoRoute(
         path: RoutePaths.editProfile,
         builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.pickupRequest,
+        name: RouteNames.pickupRequest,
+        builder: (context, state) => const PickupRequestScreen(),
       ),
     ],
 

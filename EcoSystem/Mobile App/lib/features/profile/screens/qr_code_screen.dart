@@ -8,7 +8,6 @@
 // - Large, scannable QR code
 // - User ID encoded in QR
 // - Instructions for use
-// - Optional: Bluetooth connection status
 // =============================================================================
 
 import 'package:flutter/material.dart';
@@ -16,7 +15,6 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/firebase_auth_service.dart';
-import '../../../core/services/ble_service.dart';
 
 /// QrCodeScreen displays the user's unique QR code for kiosk identification
 class QrCodeScreen extends StatelessWidget {
@@ -25,11 +23,11 @@ class QrCodeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<FirebaseAuthService>();
-    final bleService = context.watch<BleService>();
     final user = authService.currentUser;
 
-    // Generate unique QR data (user ID + timestamp for security)
-    final qrData = 'reward:${user?.id ?? "guest"}:${DateTime.now().millisecondsSinceEpoch}';
+    // Use persistent 8-digit kiosk code for QR identification
+    final kioskCode = user?.kioskCode ?? 'NO_CODE';
+    final qrData = 'reward:$kioskCode';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -83,7 +81,40 @@ class QrCodeScreen extends StatelessWidget {
                         size: Size(40, 40),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
+                    // 8-digit kiosk code (for manual entry)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Text(
+                        kioskCode.replaceAllMapped(
+                          RegExp(r'.{4}'),
+                          (match) => '${match.group(0)} ',
+                        ).trim(),
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 4,
+                          color: AppColors.primary,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Your Kiosk ID',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textHint,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     // User info
                     Text(
                       user?.name ?? 'Guest User',
@@ -139,7 +170,7 @@ class QrCodeScreen extends StatelessWidget {
                     ),
                     const _InstructionStep(
                       number: '2',
-                      text: 'Show this QR code to the scanner',
+                      text: 'Scan this QR code or enter code on keypad',
                     ),
                     const _InstructionStep(
                       number: '3',
@@ -153,150 +184,11 @@ class QrCodeScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 24),
-
-              // ---------------------------------------------------------------
-              // Bluetooth Connection Status (Optional)
-              // ---------------------------------------------------------------
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: bleService.isConnected
-                        ? AppColors.success
-                        : AppColors.border,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      bleService.isConnected
-                          ? Icons.bluetooth_connected
-                          : Icons.bluetooth_disabled,
-                      color: bleService.isConnected
-                          ? AppColors.success
-                          : AppColors.textHint,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            bleService.isConnected
-                                ? 'Connected to Kiosk'
-                                : 'Not Connected',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: bleService.isConnected
-                                  ? AppColors.success
-                                  : AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            bleService.isConnected
-                                ? bleService.connectedDevice?.name ?? 'Unknown'
-                                : 'Scan QR at kiosk to connect',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!bleService.isConnected)
-                      TextButton(
-                        onPressed: () async {
-                          // Start BLE scan
-                          await bleService.startScan();
-                          // Show device selection dialog
-                          if (context.mounted) {
-                            _showDeviceSelectionDialog(context, bleService);
-                          }
-                        },
-                        child: const Text('Scan'),
-                      ),
-                  ],
-                ),
-              ),
 
               const SizedBox(height: 100), // Bottom nav padding
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// Show dialog to select a BLE device
-  void _showDeviceSelectionDialog(BuildContext context, BleService bleService) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Consumer<BleService>(
-        builder: (context, ble, _) {
-          return Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Select Kiosk',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (ble.connectionState == BleConnectionState.scanning)
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (ble.discoveredDevices.isEmpty)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.bluetooth_searching,
-                            size: 48,
-                            color: AppColors.textHint,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Searching for kiosks...',
-                            style: TextStyle(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  ...ble.discoveredDevices.map((device) => ListTile(
-                        leading: const Icon(Icons.recycling),
-                        title: Text(device.name),
-                        subtitle: Text('Signal: ${device.rssi} dBm'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () async {
-                          Navigator.pop(context);
-                          await ble.connect(device);
-                        },
-                      )),
-              ],
-            ),
-          );
-        },
       ),
     );
   }

@@ -31,6 +31,9 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Prevent the floating action button from moving up with the keyboard
+      resizeToAvoidBottomInset: false,
+      
       // ---------------------------------------------------------------------------
       // Main Content Area
       // ---------------------------------------------------------------------------

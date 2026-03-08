@@ -59,6 +59,11 @@ try {
             response(['status' => 'ok', 'message' => 'REward API v1.0']);
             break;
 
+        // Diagnostic connection test
+        case $path === '/test-connection' && $method === 'GET':
+            require_once __DIR__ . '/endpoints/test_connection.php';
+            break;
+
         // =================================================================
         // NOTIFICATION ENDPOINTS
         // =================================================================
@@ -73,11 +78,15 @@ try {
             require_once __DIR__ . '/endpoints/notify_user.php';
             break;
 
-        // Send OTP via Email
+        // Send OTP Email
         case $path === '/send-otp-email' && $method === 'POST':
             require_once __DIR__ . '/endpoints/send_otp_email.php';
             break;
 
+        // Reset Password via Email verification (Admin SDK substitute)
+        case $path === '/reset-password' && $method === 'POST':
+            require_once __DIR__ . '/endpoints/reset_password.php';
+            break;
 
         // =================================================================
         // KIOSK/MACHINE ENDPOINTS (for ESP32)
@@ -100,9 +109,20 @@ try {
             require_once __DIR__ . '/endpoints/kiosk_get.php';
             break;
 
+        // Get all kiosks
+        case $path === '/kiosks' && $method === 'GET':
+            require_once __DIR__ . '/endpoints/kiosks_list.php';
+            break;
+
         // =================================================================
         // USER ENDPOINTS
         // =================================================================
+
+        // Get user by kiosk code (for ESP32 keypad lookup)
+        case preg_match('/^\/user\/by-code\/([0-9]{8})$/', $path, $matches) && $method === 'GET':
+            $kioskCode = $matches[1];
+            require_once __DIR__ . '/endpoints/user_get_by_code.php';
+            break;
 
         // Get user by ID
         case preg_match('/^\/user\/([a-zA-Z0-9]+)$/', $path, $matches) && $method === 'GET':

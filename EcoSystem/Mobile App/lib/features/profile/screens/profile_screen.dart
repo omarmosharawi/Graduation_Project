@@ -10,6 +10,7 @@
 // - Logout button
 // =============================================================================
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -48,20 +49,44 @@ class ProfileScreen extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _PointsCard(
-                      title: 'Current Points',
-                      points: user?.currentPoints ?? 0,
-                      icon: Icons.stars,
+                    child: _StatsCard(
+                      title: 'Current',
+                      value: '${user?.currentPoints ?? 0}',
+                      label: 'Points',
+                      icon: Icons.stars_rounded,
                       color: AppColors.secondary,
+                      gradient: [
+                        AppColors.secondary,
+                        AppColors.secondary.withOpacity(0.7),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: _PointsCard(
-                      title: 'Total Earned',
-                      points: user?.totalPoints ?? 0,
-                      icon: Icons.trending_up,
+                    child: _StatsCard(
+                      title: 'Lifetime',
+                      value: '${user?.totalPoints ?? 0}',
+                      label: 'Points',
+                      icon: Icons.auto_graph_rounded,
                       color: AppColors.primary,
+                      gradient: [
+                        AppColors.primary,
+                        AppColors.primary.withOpacity(0.7),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _StatsCard(
+                      title: 'Recycled',
+                      value: '${(user?.totalPlastic ?? 0) + (user?.totalMetal ?? 0)}',
+                      label: 'Items',
+                      icon: Icons.recycling_rounded,
+                      color: const Color(0xFF10B981), // Success Emerald
+                      gradient: [
+                        const Color(0xFF10B981),
+                        const Color(0xFF059669),
+                      ],
                     ),
                   ),
                 ],
@@ -240,17 +265,36 @@ class _ProfileHeader extends StatelessWidget {
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              user?.name.isNotEmpty == true
-                  ? user!.name[0].toUpperCase()
-                  : 'U',
-              style: const TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textOnPrimary,
-              ),
-            ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: user?.avatarUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: user!.avatarUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    ),
+                    errorWidget: (context, url, error) => Center(
+                      child: Text(
+                        user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textOnPrimary,
+                        ),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textOnPrimary,
+                      ),
+                    ),
+                  ),
           ),
         ),
         const SizedBox(height: 16),
@@ -332,53 +376,80 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
-/// Points display card
-class _PointsCard extends StatelessWidget {
+/// Stats display card with premium look
+class _StatsCard extends StatelessWidget {
   final String title;
-  final int points;
+  final String value;
+  final String label;
   final IconData icon;
   final Color color;
+  final List<Color> gradient;
 
-  const _PointsCard({
+  const _StatsCard({
     required this.title,
-    required this.points,
+    required this.value,
+    required this.label,
     required this.icon,
     required this.color,
+    required this.gradient,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: color.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(
+          color: color.withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 10),
           Text(
-            '$points',
+            value,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: color,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.5,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             title,
             style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary.withOpacity(0.8),
+              textBaseline: TextBaseline.alphabetic,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary.withOpacity(0.8),
             ),
           ),
         ],

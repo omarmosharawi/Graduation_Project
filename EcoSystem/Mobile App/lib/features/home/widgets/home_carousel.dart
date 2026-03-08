@@ -5,6 +5,10 @@ import '../../../../core/models/global_stats_model.dart';
 import '../../../../core/models/home_card_model.dart';
 import '../../../../core/services/home_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
+import '../../../app/routes.dart';
+import 'analytics_chart.dart';
 
 class HomeCarousel extends StatelessWidget {
   final HomeService _homeService = HomeService();
@@ -42,7 +46,7 @@ class HomeCarousel extends StatelessWidget {
             return Builder(
               builder: (BuildContext context) {
                 if (card.type == 'analytics') {
-                  return _AnalyticsCard();
+                  return _AnalyticsCard(card: card);
                 } else {
                   return _PromoCard(card: card);
                 }
@@ -57,8 +61,9 @@ class HomeCarousel extends StatelessWidget {
 
 class _AnalyticsCard extends StatelessWidget {
   final HomeService _homeService = HomeService();
+  final HomeCard? card;
 
-  _AnalyticsCard();
+  _AnalyticsCard({this.card});
 
   @override
   Widget build(BuildContext context) {
@@ -88,85 +93,54 @@ class _AnalyticsCard extends StatelessWidget {
                 // Stats Text Column
                 Expanded(
                   flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Our statistics',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          card?.title ?? 'Our statistics',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _StatItem(
-                        icon: Icons.local_drink,
-                        value: stats.totalBottles,
-                        label: 'Bottles',
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(height: 8),
-                      _StatItem(
-                        icon: Icons.delete_outline,
-                        value: stats.totalCans,
-                        label: 'Cans',
-                        color: AppColors.secondary,
-                      ),
-                      const SizedBox(height: 8),
-                      _StatItem(
-                        icon: Icons.scale,
-                        value: stats.totalWeightKg.toInt(),
-                        label: 'Kg Recycled',
-                        color: Colors.purple,
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        _StatItem(
+                          icon: Icons.local_drink,
+                          value: stats.totalBottles,
+                          label: 'Bottles',
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(height: 6),
+                        _StatItem(
+                          icon: Icons.delete_outline,
+                          value: stats.totalCans,
+                          label: 'Cans',
+                          color: AppColors.secondary,
+                        ),
+                        const SizedBox(height: 6),
+                        _StatItem(
+                          icon: Icons.scale,
+                          value: stats.totalWeightKg.toInt(),
+                          label: 'Kg Recycled',
+                          color: Colors.purple,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                // Circular Chart
+                // Real Analytics Chart
                 Expanded(
                   flex: 2,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Outer Ring (Bottles)
-                      SizedBox(
-                        width: 120,
-                        height: 120,
-                        child: CircularProgressIndicator(
-                          value: 0.75, // Variable based on target could be added
-                          strokeWidth: 8,
-                          color: AppColors.primary,
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
-                          strokeCap: StrokeCap.round,
-                        ),
-                      ),
-                      // Middle Ring (Cans)
-                      SizedBox(
-                        width: 90,
-                        height: 90,
-                        child: CircularProgressIndicator(
-                          value: 0.60,
-                          strokeWidth: 8,
-                          color: AppColors.secondary,
-                          backgroundColor: AppColors.secondary.withOpacity(0.1),
-                          strokeCap: StrokeCap.round,
-                        ),
-                      ),
-                      // Inner Ring (Weight)
-                      SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: CircularProgressIndicator(
-                          value: 0.45,
-                          strokeWidth: 8,
-                          color: Colors.purple,
-                          backgroundColor: Colors.purple.withOpacity(0.1),
-                          strokeCap: StrokeCap.round,
-                        ),
-                      ),
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: AnalyticsChart(stats: stats),
                   ),
                 ),
               ],
@@ -229,56 +203,69 @@ class _PromoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      margin: const EdgeInsets.symmetric(horizontal: 5.0),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(20),
-        image: card.imageUrl != null && card.imageUrl!.isNotEmpty
-            ? DecorationImage(
-                image: CachedNetworkImageProvider(card.imageUrl!),
-                fit: BoxFit.cover,
-              )
-            : null,
-      ),
+    return InkWell(
+      onTap: () async {
+        if (card.actionType == 'url' && card.actionValue != null) {
+          final uri = Uri.parse(card.actionValue!);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.platformDefault);
+          }
+        } else if (card.actionType == 'offer' && card.actionValue != null) {
+          context.push('${RoutePaths.offers}?offerId=${card.actionValue}');
+        }
+      },
+      borderRadius: BorderRadius.circular(20),
       child: Container(
+        width: MediaQuery.of(context).size.width,
+        margin: const EdgeInsets.symmetric(horizontal: 5.0),
         decoration: BoxDecoration(
+          color: AppColors.primary,
           borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-              colors: [
-                Colors.black.withOpacity(0.7),
-                Colors.transparent,
-              ],
-              begin: Alignment.bottomLeft,
-              end: Alignment.topRight,
-            ),
+          image: card.imageUrl != null && card.imageUrl!.isNotEmpty
+              ? DecorationImage(
+                  image: CachedNetworkImageProvider(card.imageUrl!),
+                  fit: BoxFit.cover,
+                )
+              : null,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                card.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+                colors: [
+                  Colors.black.withOpacity(0.7),
+                  Colors.transparent,
+                ],
+                begin: Alignment.bottomLeft,
+                end: Alignment.topRight,
               ),
-              if (card.description != null)
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  card.description!,
+                  card.title ?? '',
                   style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14.0,
+                    color: Colors.white,
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-            ],
+                if (card.description != null)
+                  Text(
+                    card.description!,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14.0,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
           ),
         ),
       ),

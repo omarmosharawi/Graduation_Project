@@ -10,7 +10,6 @@
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../utils/logger.dart';
 
@@ -112,7 +111,7 @@ class NotificationService {
     
     final notification = message.notification;
     if (notification != null) {
-      _showLocalNotification(
+      showLocalNotification(
         title: notification.title ?? 'REward',
         body: notification.body ?? '',
         payload: message.data.toString(),
@@ -127,7 +126,7 @@ class NotificationService {
   }
 
   /// Show local notification (for foreground)
-  Future<void> _showLocalNotification({
+  Future<void> showLocalNotification({
     required String title,
     required String body,
     String? payload,
@@ -226,7 +225,7 @@ class NotificationService {
     AppLogger.info('Push to topic $topic: $title');
     
     // Show local notification for the sender's device
-    await _showLocalNotification(
+    await showLocalNotification(
       title: title,
       body: body,
       payload: 'topic:$topic',

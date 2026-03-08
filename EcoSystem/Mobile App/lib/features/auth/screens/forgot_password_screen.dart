@@ -13,6 +13,7 @@ import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/firebase_auth_service.dart';
 import '../../../core/widgets/auth_background.dart';
+import '../../../core/utils/validation_utils.dart';
 import 'dart:async';
 
 
@@ -42,11 +43,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     _emailController.dispose();
     _otpController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
-    _timer?.cancel();
     super.dispose();
   }
 
@@ -55,6 +56,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     _canResend = false;
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       if (_start == 0) {
         setState(() {
           _canResend = true;
@@ -71,6 +76,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _resendOtp() async {
     final authService = context.read<FirebaseAuthService>();
     final success = await authService.sendOtp(_emailController.text.trim());
+    
+    if (!mounted) return;
+
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('OTP sent successfully! Check console for code.')),
@@ -86,17 +94,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     switch (_currentStep) {
       case 0: // Email step
-        if (_emailController.text.length < 5 || !_emailController.text.contains('@')) {
-          _showError('Please enter a valid email');
+        final emailError = ValidationUtils.validateEmail(_emailController.text.trim());
+        if (emailError != null) {
+          _showError(emailError);
           return;
         }
-        // Changed from requestPasswordReset to sendOtp
         final success = await authService.sendOtp(_emailController.text.trim());
+        
+        if (!mounted) return;
+
         if (success) {
           setState(() {
             _currentStep = 1;
           });
-          _startTimer(); // Start timer when moving to OTP step
+          _startTimer();
         } else {
           _showError(authService.error ?? 'Failed to send OTP');
         }
@@ -111,27 +122,38 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           _emailController.text.trim(),
           _otpController.text,
         );
+
+        if (!mounted) return;
+
         if (success) {
           setState(() => _currentStep = 2);
-          _timer?.cancel(); // Stop timer when verified
+          _timer?.cancel();
         } else {
           _showError(authService.error ?? 'Invalid OTP');
         }
         break;
 
       case 2: // New password step
-        if (_newPasswordController.text.length < 6) {
-          _showError('Password must be at least 6 characters');
+        final passwordError = ValidationUtils.validateStrongPassword(_newPasswordController.text);
+        if (passwordError != null) {
+          _showError(passwordError);
           return;
         }
-        if (_newPasswordController.text != _confirmPasswordController.text) {
-          _showError('Passwords do not match');
+        final confirmError = ValidationUtils.validateConfirmPassword(
+          _confirmPasswordController.text,
+          _newPasswordController.text,
+        );
+        if (confirmError != null) {
+          _showError(confirmError);
           return;
         }
         final success = await authService.resetPassword(
           _emailController.text.trim(),
           _newPasswordController.text,
         );
+
+        if (!mounted) return;
+
         if (success) {
           setState(() => _currentStep = 3);
         } else {

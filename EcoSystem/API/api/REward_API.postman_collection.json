@@ -8,12 +8,12 @@
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "https://yourdomain.com/api",
+			"value": "https://reward.ibrahim-azab.com/api",
 			"type": "string"
 		},
 		{
 			"key": "apiKey",
-			"value": "your-secret-api-key-change-this",
+			"value": "53cdf4760cdd5bd629a0b214d80e15ec",
 			"type": "string"
 		},
 		{
@@ -23,7 +23,7 @@
 		},
 		{
 			"key": "testKioskId",
-			"value": "YOUR_KIOSK_ID_HERE",
+			"value": "kiosk_01",
 			"type": "string"
 		}
 	],
@@ -165,6 +165,23 @@
 			"name": "Kiosk (ESP32)",
 			"item": [
 				{
+					"name": "List All Kiosks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/kiosks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"kiosks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get Kiosk Info",
 					"request": {
 						"method": "GET",
@@ -263,6 +280,25 @@
 							"path": [
 								"user",
 								"{{testUserId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by Keypad Code",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/by-code/12345678",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user",
+								"by-code",
+								"12345678"
 							]
 						}
 					},

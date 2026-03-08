@@ -8,9 +8,12 @@
 // - System announcements (from admin)
 // =============================================================================
 
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/firebase_auth_service.dart';
 
@@ -126,6 +129,9 @@ class _NotificationsList extends StatelessWidget {
                   if (!item.isAnnouncement) {
                     authService.markNotificationAsRead(item.id);
                   }
+                  if (item.type == 'rewardRedeemed') {
+                    context.push(RoutePaths.offers);
+                  }
                 },
               )),
               const SizedBox(height: 16),
@@ -139,6 +145,9 @@ class _NotificationsList extends StatelessWidget {
                   if (!item.isAnnouncement) {
                     authService.markNotificationAsRead(item.id);
                   }
+                  if (item.type == 'rewardRedeemed') {
+                    context.push(RoutePaths.offers);
+                  }
                 },
               )),
               const SizedBox(height: 16),
@@ -151,6 +160,9 @@ class _NotificationsList extends StatelessWidget {
                 onTap: () {
                   if (!item.isAnnouncement) {
                     authService.markNotificationAsRead(item.id);
+                  }
+                  if (item.type == 'rewardRedeemed') {
+                    context.push(RoutePaths.offers);
                   }
                 },
               )),
@@ -181,7 +193,7 @@ class _NotificationsList extends StatelessWidget {
                 type: data['type'] ?? 'general',
                 title: data['title'] ?? 'Notification',
                 message: data['message'] ?? '',
-                timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+                timestamp: _parseDateTime(data['timestamp']),
                 isRead: data['isRead'] ?? false,
                 isAnnouncement: false,
               );
@@ -200,20 +212,50 @@ class _NotificationsList extends StatelessWidget {
                 type: 'announcement',
                 title: data['title'] ?? 'Announcement',
                 message: data['message'] ?? '',
-                timestamp: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+                timestamp: _parseDateTime(data['createdAt']),
                 isRead: true, // Announcements don't have read state
                 isAnnouncement: true,
               );
             }).toList());
 
     // Combine both streams
-    return userNotificationsStream.asyncExpand((userNotifications) {
-      return announcementsStream.map((announcements) {
-        final combined = [...userNotifications, ...announcements];
-        combined.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-        return combined;
-      });
-    });
+    late StreamController<List<NotificationItem>> controller;
+    StreamSubscription? sub1;
+    StreamSubscription? sub2;
+    List<NotificationItem> userList = [];
+    List<NotificationItem> annList = [];
+
+    void emit() {
+      if (controller.isClosed) return;
+      final combined = [...userList, ...annList];
+      combined.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      controller.add(combined);
+    }
+
+    controller = StreamController<List<NotificationItem>>.broadcast(
+      onListen: () {
+        sub1 = userNotificationsStream.listen((data) {
+          userList = data;
+          emit();
+        });
+        sub2 = announcementsStream.listen((data) {
+          annList = data;
+          emit();
+        });
+      },
+      onCancel: () {
+        sub1?.cancel();
+        sub2?.cancel();
+      },
+    );
+
+    return controller.stream;
+  }
+
+  DateTime _parseDateTime(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    return DateTime.now();
   }
 
   Widget _buildSectionHeader(String title) {
@@ -396,7 +438,7 @@ class _NotificationCard extends StatelessWidget {
     switch (type) {
       case 'points_earned':
         return Icons.add_circle;
-      case 'reward_redeemed':
+      case 'rewardRedeemed':
         return Icons.card_giftcard;
       case 'achievement':
         return Icons.emoji_events;
@@ -411,7 +453,7 @@ class _NotificationCard extends StatelessWidget {
     switch (type) {
       case 'points_earned':
         return AppColors.success;
-      case 'reward_redeemed':
+      case 'rewardRedeemed':
         return AppColors.primary;
       case 'achievement':
         return AppColors.secondary;

@@ -21,13 +21,14 @@ class AboutScreen extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // Logo
+            // Unified Logo
             Container(
               width: 120,
               height: 120,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withOpacity(0.3),
@@ -36,11 +37,9 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Center(
-                child: Text(
-                  '♻️',
-                  style: TextStyle(fontSize: 60),
-                ),
+              child: Image.asset(
+                'assets/images/logo_unified.png',
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 24),
@@ -64,7 +63,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Version 1.0.0',
+              'Version 1.1.0',
               style: TextStyle(color: AppColors.textHint),
             ),
 
@@ -126,9 +125,9 @@ class AboutScreen extends StatelessWidget {
               children: [
                 _SocialButton(icon: Icons.facebook, onTap: () {}),
                 const SizedBox(width: 16),
-                _SocialButton(icon: Icons.camera_alt, onTap: () {}),
+                _SocialButton(icon: Icons.camera_alt, onTap: () {}), // Instagram placeholder
                 const SizedBox(width: 16),
-                _SocialButton(icon: Icons.alternate_email, onTap: () {}),
+                _SocialButton(icon: Icons.tiktok, onTap: () {}), // TikTok
               ],
             ),
 
@@ -136,7 +135,7 @@ class AboutScreen extends StatelessWidget {
 
             // Footer
             Text(
-              '© 2025 REward App',
+              '© 2026 REward App', // Updated year
               style: TextStyle(color: AppColors.textHint),
             ),
             const SizedBox(height: 8),

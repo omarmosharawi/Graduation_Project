@@ -10,65 +10,7 @@ import '../../../core/services/firebase_auth_service.dart';
 class BadgesScreen extends StatelessWidget {
   const BadgesScreen({super.key});
 
-  // Default badges if Firestore badges collection is empty
-  static const List<Map<String, dynamic>> _defaultBadges = [
-    {
-      'id': 'first_bottle',
-      'name': 'First Steps',
-      'description': 'Recycle your first bottle',
-      'icon': '🍼',
-      'requirement': 'recycledCount',
-      'threshold': 1,
-    },
-    {
-      'id': 'recycler_10',
-      'name': 'Getting Started',
-      'description': 'Recycle 10 items',
-      'icon': '♻️',
-      'requirement': 'recycledCount',
-      'threshold': 10,
-    },
-    {
-      'id': 'recycler_50',
-      'name': 'Eco Warrior',
-      'description': 'Recycle 50 items',
-      'icon': '🌱',
-      'requirement': 'recycledCount',
-      'threshold': 50,
-    },
-    {
-      'id': 'recycler_100',
-      'name': 'Century Club',
-      'description': 'Recycle 100 items',
-      'icon': '🏆',
-      'requirement': 'recycledCount',
-      'threshold': 100,
-    },
-    {
-      'id': 'points_500',
-      'name': 'Points Collector',
-      'description': 'Earn 500 total points',
-      'icon': '⭐',
-      'requirement': 'totalPoints',
-      'threshold': 500,
-    },
-    {
-      'id': 'points_1000',
-      'name': 'Points Master',
-      'description': 'Earn 1000 total points',
-      'icon': '🌟',
-      'requirement': 'totalPoints',
-      'threshold': 1000,
-    },
-    {
-      'id': 'points_5000',
-      'name': 'Points Legend',
-      'description': 'Earn 5000 total points',
-      'icon': '💫',
-      'requirement': 'totalPoints',
-      'threshold': 5000,
-    },
-  ];
+  // Badges are now managed centrally in FirebaseAuthService
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +30,7 @@ class BadgesScreen extends StatelessWidget {
         builder: (context, snapshot) {
           final badges = snapshot.data?.isNotEmpty == true 
               ? snapshot.data! 
-              : _defaultBadges;
+              : FirebaseAuthService.defaultBadges;
 
           return ListView(
             padding: const EdgeInsets.all(16),

@@ -67,7 +67,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
                 child: CustomPaint(
                   size: const Size(350, 350),
                   painter: _WavyShapePainter(
-                    color: AppColors.primary.withOpacity(0.12),
+                    color: AppColors.primary.withValues(alpha: 0.12),
                     progress: _controller1.value,
                   ),
                 ),
@@ -90,8 +90,8 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.secondary.withOpacity(0.1),
-                      AppColors.secondary.withOpacity(0.02),
+                      AppColors.secondary.withValues(alpha: 0.1),
+                      AppColors.secondary.withValues(alpha: 0.02),
                     ],
                   ),
                 ),
@@ -114,8 +114,8 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.primary.withOpacity(0.08),
-                      AppColors.primary.withOpacity(0.01),
+                      AppColors.primary.withValues(alpha: 0.08),
+                      AppColors.primary.withValues(alpha: 0.01),
                     ],
                   ),
                 ),

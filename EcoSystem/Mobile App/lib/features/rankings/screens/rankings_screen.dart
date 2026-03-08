@@ -10,10 +10,12 @@
 // - Current user position highlight
 // =============================================================================
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/firebase_auth_service.dart';
+import '../../../core/utils/logger.dart';
 
 /// Leaderboard entry model
 class LeaderboardEntry {
@@ -21,6 +23,7 @@ class LeaderboardEntry {
   final String name;
   final int points;
   final String avatarLetter;
+  final String? avatarUrl;
   final bool isCurrentUser;
   final String odId; // User ID
 
@@ -29,6 +32,7 @@ class LeaderboardEntry {
     required this.name,
     required this.points,
     required this.avatarLetter,
+    this.avatarUrl,
     this.isCurrentUser = false,
     this.odId = '',
   });
@@ -39,6 +43,7 @@ class LeaderboardEntry {
       name: user.name,
       points: user.totalPoints,
       avatarLetter: user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+      avatarUrl: user.avatarUrl,
       isCurrentUser: user.id == currentUserId,
       odId: user.id,
     );
@@ -58,6 +63,7 @@ class _RankingsScreenState extends State<RankingsScreen>
   late TabController _tabController;
   
   List<LeaderboardEntry> _leaderboardData = [];
+  int _globalRank = 0; // The actual rank of the current user
   bool _isLoading = true;
 
   @override
@@ -81,15 +87,27 @@ class _RankingsScreenState extends State<RankingsScreen>
     final currentUserId = authService.currentUser?.id;
     
     try {
-      final users = _tabController.index == 0 
+      final isWeekly = _tabController.index == 0;
+      final users = isWeekly
           ? await authService.getWeeklyLeaderboard()
           : await authService.getLeaderboard();
       
       _leaderboardData = users.asMap().entries.map((entry) {
         return LeaderboardEntry.fromAppUser(entry.value, entry.key + 1, currentUserId);
       }).toList();
+      
+      // Log the IDs of people on the board
+      final idList = _leaderboardData.map((e) => e.odId).toList();
+      AppLogger.info('Weekly Leaderboard User IDs: $idList');
+
+      // Fetch exact global rank position for the "YOU" card
+      _globalRank = await authService.getUserRankPosition(isWeekly: isWeekly);
+      
+      AppLogger.info('Leaderboard loaded: ${_leaderboardData.length} entries. User rank: $_globalRank');
     } catch (e) {
+      AppLogger.error('Error loading leaderboard: $e');
       _leaderboardData = [];
+      _globalRank = 0;
     }
     
     if (mounted) {
@@ -215,19 +233,23 @@ class _RankingsScreenState extends State<RankingsScreen>
   }
 
   Widget _buildLeaderboard(List<LeaderboardEntry> data) {
+    final hasCurrentUser = data.any((e) => e.isCurrentUser);
+    
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Top 3 Podium
-        if (data.length >= 3) _buildPodium(data.take(3).toList()),
+        // Top 3 Podium (works with 1, 2, or 3 users)
+        if (data.isNotEmpty) _buildPodium(data.take(3).toList()),
         const SizedBox(height: 24),
 
-        // Rest of the list
+        // Rest of the list (4th place onwards)
         ...data.skip(3).map((entry) => _LeaderboardTile(entry: entry)),
 
-        // Current user position
-        const SizedBox(height: 16),
-        _buildCurrentUserCard(),
+        // Only show the "YOU" card if the current user is NOT already in the list
+        if (!hasCurrentUser) ...[
+          const SizedBox(height: 16),
+          _buildCurrentUserCard(),
+        ],
 
         const SizedBox(height: 80), // Bottom nav padding
       ],
@@ -235,34 +257,52 @@ class _RankingsScreenState extends State<RankingsScreen>
   }
 
   /// Build the top 3 podium
+  /// Build the top 3 podium
   Widget _buildPodium(List<LeaderboardEntry> topThree) {
+    if (topThree.isEmpty) return const SizedBox.shrink();
+    
+    final first = topThree.isNotEmpty ? topThree[0] : null;
+    final second = topThree.length > 1 ? topThree[1] : null;
+    final third = topThree.length > 2 ? topThree[2] : null;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // 2nd place
-        _PodiumItem(
-          entry: topThree[1],
-          height: 100,
-          color: const Color(0xFFC0C0C0), // Silver
-          position: 2,
-        ),
+        if (second != null)
+          _PodiumItem(
+            entry: second,
+            height: 100,
+            color: const Color(0xFFC0C0C0), // Silver
+            position: 2,
+          )
+        else
+          const SizedBox(width: 80),
+        
         const SizedBox(width: 8),
+        
         // 1st place
-        _PodiumItem(
-          entry: topThree[0],
-          height: 130,
-          color: const Color(0xFFFFD700), // Gold
-          position: 1,
-        ),
+        if (first != null)
+          _PodiumItem(
+            entry: first,
+            height: 130,
+            color: const Color(0xFFFFD700), // Gold
+            position: 1,
+          ),
+          
         const SizedBox(width: 8),
+        
         // 3rd place
-        _PodiumItem(
-          entry: topThree[2],
-          height: 80,
-          color: const Color(0xFFCD7F32), // Bronze
-          position: 3,
-        ),
+        if (third != null)
+          _PodiumItem(
+            entry: third,
+            height: 80,
+            color: const Color(0xFFCD7F32), // Bronze
+            position: 3,
+          )
+        else
+          const SizedBox(width: 80),
       ],
     );
   }
@@ -273,9 +313,14 @@ class _RankingsScreenState extends State<RankingsScreen>
     final user = authService.currentUser;
     if (user == null) return const SizedBox.shrink();
 
-    // Find user's position in the leaderboard
-    final userPosition = _leaderboardData.indexWhere((e) => e.isCurrentUser);
-    final rankDisplay = userPosition >= 0 ? '#${userPosition + 1}' : '#-';
+    final rankDisplay = _globalRank > 0 ? '#$_globalRank' : '#-';
+    
+    // For weekly, we need to find their listed weekly points, or default to 0
+    int displayPoints = user.totalPoints;
+    if (_tabController.index == 0) {
+      final userEntry = _leaderboardData.where((e) => e.isCurrentUser).firstOrNull;
+      displayPoints = userEntry?.points ?? 0;
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -307,15 +352,36 @@ class _RankingsScreenState extends State<RankingsScreen>
               color: AppColors.primary,
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: Text(
-                user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textOnPrimary,
-                ),
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: user.avatarUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: user.avatarUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: Text(
+                          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textOnPrimary,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textOnPrimary,
+                        ),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(width: 16),
@@ -354,7 +420,7 @@ class _RankingsScreenState extends State<RankingsScreen>
                   ],
                 ),
                 Text(
-                  '${user.totalPoints} points',
+                  '$displayPoints points',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -388,6 +454,33 @@ class _PodiumItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // YOU badge for podium
+        if (entry.isCurrentUser)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Text(
+                'YOU',
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
         // Avatar
         Container(
           width: 56,
@@ -395,17 +488,48 @@ class _PodiumItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color.withOpacity(0.2),
             shape: BoxShape.circle,
-            border: Border.all(color: color, width: 3),
-          ),
-          child: Center(
-            child: Text(
-              entry.avatarLetter,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+            border: Border.all(
+              color: entry.isCurrentUser ? AppColors.primary : color, 
+              width: 3,
             ),
+            boxShadow: entry.isCurrentUser ? [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.3),
+                blurRadius: 8,
+                spreadRadius: 2,
+              )
+            ] : null,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: entry.avatarUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: entry.avatarUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    errorWidget: (context, url, error) => Center(
+                      child: Text(
+                        entry.avatarLetter,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: entry.isCurrentUser ? AppColors.primary : color,
+                        ),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      entry.avatarLetter,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: entry.isCurrentUser ? AppColors.primary : color,
+                      ),
+                    ),
+                  ),
           ),
         ),
         const SizedBox(height: 8),
@@ -475,12 +599,19 @@ class _LeaderboardTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: entry.isCurrentUser
-            ? AppColors.primary.withOpacity(0.1)
+            ? AppColors.primary.withOpacity(0.15)
             : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: entry.isCurrentUser
-            ? Border.all(color: AppColors.primary)
-            : null,
+            ? Border.all(color: AppColors.primary, width: 2)
+            : Border.all(color: AppColors.textHint.withOpacity(0.1)),
+        boxShadow: entry.isCurrentUser ? [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          )
+        ] : null,
       ),
       child: Row(
         children: [
@@ -506,15 +637,36 @@ class _LeaderboardTile extends StatelessWidget {
               color: AppColors.secondaryLight,
               shape: BoxShape.circle,
             ),
-            child: Center(
-              child: Text(
-                entry.avatarLetter,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: entry.avatarUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: entry.avatarUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: Text(
+                          entry.avatarLetter,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        entry.avatarLetter,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(width: 12),

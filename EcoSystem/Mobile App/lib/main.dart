@@ -23,7 +23,6 @@ import 'app/routes.dart';
 
 // Service imports
 import 'core/services/firebase_auth_service.dart';
-import 'core/services/ble_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/location_service.dart';
 
@@ -85,10 +84,6 @@ class RewardApp extends StatelessWidget {
         // Firebase Authentication service provider
         ChangeNotifierProvider(
           create: (_) => FirebaseAuthService(),
-        ),
-        // Bluetooth Low Energy service provider for ESP32 communication
-        ChangeNotifierProvider(
-          create: (_) => BleService(),
         ),
       ],
       // -----------------------------------------------------------------------

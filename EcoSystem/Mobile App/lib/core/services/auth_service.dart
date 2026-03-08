@@ -411,10 +411,12 @@ class AuthService extends ChangeNotifier {
 
     String newRank;
     if (_currentUser!.totalPoints >= 10000) {
-      newRank = 'Platinum';
+      newRank = 'Diamond';
     } else if (_currentUser!.totalPoints >= 5000) {
+      newRank = 'Platinum';
+    } else if (_currentUser!.totalPoints >= 2000) {
       newRank = 'Gold';
-    } else if (_currentUser!.totalPoints >= 1000) {
+    } else if (_currentUser!.totalPoints >= 500) {
       newRank = 'Silver';
     } else {
       newRank = 'Bronze';

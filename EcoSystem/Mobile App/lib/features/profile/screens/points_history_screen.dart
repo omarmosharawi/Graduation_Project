@@ -66,7 +66,20 @@ class PointsHistoryScreen extends StatelessWidget {
                   return _buildEmptyState();
                 }
 
-                final transactions = snapshot.data!.docs;
+                final transactions = snapshot.data!.docs.toList();
+                
+                // Sort transactions locally by timestamp descending
+                transactions.sort((a, b) {
+                  final dataA = a.data() as Map<String, dynamic>;
+                  final dataB = b.data() as Map<String, dynamic>;
+                  final typeA = dataA['timestamp'];
+                  final typeB = dataB['timestamp'];
+                  
+                  final dateA = typeA is Timestamp ? typeA.toDate() : (typeA is String ? DateTime.tryParse(typeA) ?? DateTime.fromMillisecondsSinceEpoch(0) : DateTime.fromMillisecondsSinceEpoch(0));
+                  final dateB = typeB is Timestamp ? typeB.toDate() : (typeB is String ? DateTime.tryParse(typeB) ?? DateTime.fromMillisecondsSinceEpoch(0) : DateTime.fromMillisecondsSinceEpoch(0));
+                  
+                  return dateB.compareTo(dateA);
+                });
 
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -153,7 +166,13 @@ class _TransactionTile extends StatelessWidget {
     final points = data['points'] as int? ?? 0;
     final type = data['type'] as String? ?? 'earned';
     final description = data['description'] as String? ?? '';
-    final timestamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+    
+    DateTime timestamp = DateTime.now();
+    if (data['timestamp'] is Timestamp) {
+      timestamp = (data['timestamp'] as Timestamp).toDate();
+    } else if (data['timestamp'] is String) {
+      timestamp = DateTime.tryParse(data['timestamp'] as String) ?? DateTime.now();
+    }
 
     final isEarned = type == 'earned';
 

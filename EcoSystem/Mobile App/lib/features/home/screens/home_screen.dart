@@ -9,9 +9,11 @@
 // - Quick action buttons
 // =============================================================================
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/services/firebase_auth_service.dart';
@@ -62,8 +64,14 @@ class HomeScreen extends StatelessWidget {
       body: ProfileCompletionChecker(
         child: AnimatedBackground(
           child: SafeArea(
-            child: CustomScrollView(
-              slivers: [
+            child: RefreshIndicator(
+              onRefresh: () async {
+                // Refresh both auth and offers
+                await authService.refreshUserData();
+                await _offersService.getOffersStream().first;
+              },
+              child: CustomScrollView(
+                slivers: [
                 // ---------------------------------------------------------------
                 // App Bar with Welcome & Notifications
             // ---------------------------------------------------------------
@@ -86,18 +94,20 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          user?.name ?? 'User',
+                          (user?.name ?? 'User').split(' ').first,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                     // Notification bell
-                    FutureBuilder<int>(
-                      future: context.read<FirebaseAuthService>().getUnreadNotificationsCount(),
+                    StreamBuilder<int>(
+                      stream: context.read<FirebaseAuthService>().getUnreadNotificationsCountStream(),
                       builder: (context, snapshot) {
                         final unreadCount = snapshot.data ?? 0;
                         return IconButton(
@@ -234,6 +244,10 @@ class HomeScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
+                  readOnly: true,
+                  onTap: () {
+                    context.push('${RoutePaths.offers}?focusSearch=true');
+                  },
                   decoration: InputDecoration(
                     hintText: 'Search offers & rewards',
                     prefixIcon: const Icon(Icons.search),
@@ -288,7 +302,7 @@ class HomeScreen extends StatelessWidget {
             // Offers Carousel - Real data from Firestore
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 160,
+                height: 200,
                 child: StreamBuilder<List<Offer>>(
                   stream: _offersService.getOffersStream(),
                   builder: (context, snapshot) {
@@ -443,6 +457,74 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    // On-demand collection Card (Premium)
+                    InkWell(
+                      onTap: () {
+                        if (authService.isProfileIncomplete) {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => ProfileCompletionDialog(
+                              isProfileIncomplete: true,
+                              needsEmailVerification: !authService.isGoogleUser && !authService.isEmailVerified,
+                            ),
+                          );
+                        } else {
+                          context.push(RoutePaths.pickupRequest);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.accent.withOpacity(0.2),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'On-demand collection',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Get your recyclables collected from home',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: AppColors.accent.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.local_shipping,
+                                size: 32,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -493,7 +575,7 @@ class HomeScreen extends StatelessWidget {
       ),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -522,62 +604,178 @@ class _OfferCard extends StatelessWidget {
     }
   }
 
+  LinearGradient _getCategoryGradient(String category) {
+    final color = _getCategoryColor(category);
+    return LinearGradient(
+      colors: [color, color.withOpacity(0.7)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _getCategoryColor(offer.category);
+    final gradient = _getCategoryGradient(offer.category);
     
-    return InkWell(
-      onTap: () => context.push(RoutePaths.offers),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 200,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      width: 280,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: () => context.push(RoutePaths.offers),
+          child: Stack(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    offer.title,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    offer.partner,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+              // Background: Image or Gradient
+              Positioned.fill(
+                child: offer.imageUrl != null && offer.imageUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: offer.imageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          decoration: BoxDecoration(gradient: gradient),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          decoration: BoxDecoration(gradient: gradient),
+                        ),
+                      )
+                    : Container(
+                        decoration: BoxDecoration(gradient: gradient),
+                      ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${offer.pointsRequired} pts',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
+              
+              // Overlay for readability
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withOpacity(0.6),
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.4),
+                      ],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                    ),
                   ),
+                ),
+              ),
+
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Top: Tag + Redeem Icon
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(color: Colors.white.withOpacity(0.3)),
+                              ),
+                              child: Text(
+                                offer.category,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 14,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Bottom: Info
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          offer.title,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.1,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          offer.partner,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Points required
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                '${offer.pointsRequired} pts',
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -598,15 +796,7 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        // Show message that offers are not available yet
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${category.name} offers are not available yet. Check back soon!'),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        context.push(RoutePaths.offers, extra: category.name);
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(

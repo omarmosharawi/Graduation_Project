@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the authenticated user is an admin
+    function isAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // USERS COLLECTION
+    match /users/{userId} {
+      // Anyone logged in can read (needed for leaderboards/search)
+      allow read: if request.auth != null;
+      // Users can only write their own profile data
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Notifications subcollection - user's own only
+      match /notifications/{notificationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Coupons subcollection (Redemption History) - user's own only
+      match /coupons/{couponId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Points History subcollection - user's own only
+      match /pointsHistory/{historyId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // HOME CARDS - Read by all, Managed by admins
+    match /home_cards/{cardId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    // OFFERS - Read by all, Managed by admins
+    match /offers/{offerId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    // ANNOUNCEMENTS - Read by all, Managed by admins
+    match /announcements/{announcementId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    // KIOSKS - Read by all, Managed by admins
+    match /kiosks/{kioskId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    // TRANSACTIONS - Read by all, Written by authenticated users/system
+    match /transactions/{transactionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // STATISTICS - Global app stats
+    match /statistics/{statId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // BADGES - Available badge list
+    match /badges/{badgeId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // PICKUP REQUESTS
+    match /pickup_requests/{requestId} {
+      // Users can only create their own requests and read their own
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      // Only admins can update status/ETA or delete
+      allow update, delete: if isAdmin();
+    }
+  }
+}

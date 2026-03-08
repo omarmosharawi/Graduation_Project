@@ -1,10 +1,5 @@
-// =============================================================================
-// SPLASH SCREEN - App Entry Animation
-// =============================================================================
-// The splash screen displays the REward logo on a deep green background.
-// Uses actual logo assets from assets/images folder.
-// =============================================================================
-
+import 'dart:ui';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -21,62 +16,107 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  // Animation controller for logo entrance
+    with TickerProviderStateMixin {
+  // Animation controller for glow effect
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  late Animation<double> _glowAnimation;
+  
+  // Animation controller for scale/bounce/dissolve effect
+  late AnimationController _transitionController;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+  late Animation<double> _blurAnimation;
+  
+  // Audio player for the recycling sound effect
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // State to track transition
+  bool _transitionTriggered = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Setup animations
+    // 1. Setup pulsing glow animation (only for the green logo)
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+
+    _glowAnimation = Tween<double>(begin: 0.0, end: 15.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    // 2. Setup transition animation (dissolve + scale)
+    _transitionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    // Scaling for the secondary logo
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 30), // Delay scale
+      TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.1).chain(CurveTween(curve: Curves.easeOutBack)), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0).chain(CurveTween(curve: Curves.elasticOut)), weight: 30),
+    ]).animate(_transitionController);
+
+    // Opacity/Dissolve timing
+    _opacityAnimation = CurvedAnimation(
+      parent: _transitionController,
+      curve: const Interval(0.2, 0.7, curve: Curves.easeInOut),
+    );
+
+    // Blur effect for the dissolve
+    _blurAnimation = Tween<double>(begin: 0.0, end: 20.0).animate(
       CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+        parent: _transitionController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
       ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
-    );
-
-    // Start animation
-    _animationController.forward();
+    // Initial audio setup
+    _audioPlayer.setSourceAsset('audio/recycle_chime.mp3');
 
     // Use addPostFrameCallback to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeAndNavigate();
+      _startAnimationSequence();
     });
   }
 
-  /// Initialize services and navigate to appropriate screen
-  Future<void> _initializeAndNavigate() async {
-    // Initialize auth service
+  /// Sequence: Wait -> Dissolve/Sound -> Wait -> Navigate
+  Future<void> _startAnimationSequence() async {
+    // 1. Initialize services while showing the green logo
     final authService = context.read<FirebaseAuthService>();
     await authService.initialize();
 
-    // Wait for animation to complete plus a small delay
-    await Future.delayed(const Duration(seconds: 2));
+    // Show initial logo pulsating for a moment
+    await Future.delayed(const Duration(seconds: 1));
+    
+    // 2. Trigger dissolve animation and sound
+    if (!mounted) return;
+    
+    // Play the transition chime
+    _audioPlayer.play(AssetSource('audio/recycle_chime.mp3'));
+    
+    // Start the transition
+    _transitionController.forward();
+
+    setState(() {
+      _transitionTriggered = true;
+    });
+
+    // Stop animating glow once it starts dissolving
+    _animationController.stop();
+
+    // 3. Wait for animation to settle
+    await Future.delayed(const Duration(milliseconds: 2000));
 
     if (!mounted) return;
 
     // Navigate based on auth state
     if (authService.isAuthenticated) {
-      // User is logged in, go to home
       context.go(RoutePaths.home);
     } else {
-      // New user, show onboarding
       context.go(RoutePaths.onboarding);
     }
   }
@@ -84,101 +124,78 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _transitionController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Deep forest green background matching Figma
       backgroundColor: AppColors.primary,
       body: Center(
         child: AnimatedBuilder(
-          animation: _animationController,
+          animation: Listenable.merge([_animationController, _transitionController]),
           builder: (context, child) {
-            return FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: child,
-              ),
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                // Primary Logo (Dissolving)
+                Opacity(
+                  opacity: 1.0 - _opacityAnimation.value,
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(
+                      sigmaX: _blurAnimation.value,
+                      sigmaY: _blurAnimation.value,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          if (!_transitionTriggered) 
+                            BoxShadow(
+                              color: const Color(0xFF4A7C6F).withOpacity(0.6),
+                              blurRadius: _glowAnimation.value * 3,
+                              spreadRadius: _glowAnimation.value,
+                            ),
+                        ],
+                      ),
+                      child: _buildLogo('assets/logo/RE greensvg.png'),
+                    ),
+                  ),
+                ),
+
+                // Secondary Logo (Emerging)
+                Opacity(
+                  opacity: _opacityAnimation.value,
+                  child: Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: _buildLogo('assets/logo/logo_white.png'),
+                  ),
+                ),
+              ],
             );
           },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // RE Logo from assets
-              Image.asset(
-                'assets/images/logo_re.png',
-                width: 140,
-                height: 140,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback if image not found
-                  return Container(
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2D5A50),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'RE',
-                        style: TextStyle(
-                          fontSize: 64,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF4A7C6F),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 32),
-              // REward Logo Text from assets
-              Image.asset(
-                'assets/images/logo_text.png',
-                height: 50,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback if image not found
-                  return RichText(
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'RE',
-                          style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF4A7C6F),
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'ward',
-                          style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFFD4A574),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              // Tagline
-              Text(
-                'Recycle • Reward',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textOnPrimary.withOpacity(0.7),
-                  letterSpacing: 2,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLogo(String assetPath) {
+    return Image.asset(
+      assetPath,
+      width: 250,
+      height: 250,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return const SizedBox(
+          width: 250,
+          height: 250,
+          child: Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
+        );
+      },
     );
   }
 }
