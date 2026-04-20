@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
-from django.contrib.auth.models import Group, User as AuthUser
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
 # --- UNFOLD IMPORTS ---
@@ -13,29 +13,36 @@ from .models import User, Profile
 
 
 # ==============================================================================
-# 1. CUSTOM USER & PROFILE ADMIN
+# 1. PROFILE INLINE
 # ==============================================================================
 
 class ProfileInline(StackedInline):
     """
-    Allows editing the User Profile directly inside the User edit page.
+    Renders the User's Profile fields directly inside the User change/add page.
+    Setting can_delete=False prevents accidental profile deletion from the inline.
     """
     model = Profile
     can_delete = False
-    verbose_name_plural = 'Profile'
-    fk_name = 'user'
+    verbose_name_plural = "Profile"
+    fk_name = "user"
 
 
-# IMPORTANT: ModelAdmin MUST come before BaseUserAdmin!
+# ==============================================================================
+# 2. CUSTOM USER ADMIN
+# ==============================================================================
+
 @admin.register(User)
 class UserAdmin(ModelAdmin, BaseUserAdmin):
-    # Unfold Forms
+
+    # --- Unfold-aware forms ---
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
 
+    # --- Inline profile editing ---
     inlines = (ProfileInline,)
 
+    # --- List view columns ---
     list_display = (
         "username",
         "email",
@@ -47,6 +54,7 @@ class UserAdmin(ModelAdmin, BaseUserAdmin):
         "created_at",
     )
 
+    # --- Sidebar filters ---
     list_filter = (
         "is_staff",
         "is_superuser",
@@ -61,8 +69,14 @@ class UserAdmin(ModelAdmin, BaseUserAdmin):
     ordering = ("-date_joined",)
 
     fieldsets = (
-        (None, {"fields": ("username", "password")}),
-        (_("Personal info"), {"fields": ("first_name", "last_name", "email", "phone", "profile_picture")}),
+        (
+            None,
+            {"fields": ("username", "password")},
+        ),
+        (
+            _("Personal info"),
+            {"fields": ("first_name", "last_name", "email", "phone", "profile_picture")},
+        ),
         (
             _("Permissions"),
             {
@@ -79,47 +93,57 @@ class UserAdmin(ModelAdmin, BaseUserAdmin):
             _("Verification Details"),
             {
                 "fields": ("email_verified", "phone_verified", "accept_terms"),
-                "description": "Status of user verification steps."
-            }
+                "description": "Status of user verification steps.",
+            },
         ),
         (
             _("OTP & Security"),
             {
                 "classes": ["collapse"],
                 "fields": ("otp", "otp_created_at", "otp_attempts"),
-                "description": "One-Time Password logs and tracking."
-            }
+                "description": "One-Time Password logs and tracking.",
+            },
         ),
         (
             _("Important dates"),
-            {
-                "fields": ("last_login", "date_joined", "created_at")
-            }
+            {"fields": ("last_login", "date_joined", "created_at")},
         ),
         (
             _("System Info"),
             {
                 "classes": ["collapse"],
-                "fields": ("uuid",)
-            }
+                "fields": ("uuid",),
+            },
         ),
     )
 
     add_fieldsets = (
-        (None, {
-            "classes": ["wide"],
-            "fields": ("username", "email", "password", "first_name", "last_name"),
-        }),
+        (
+            None,
+            {
+                "classes": ["wide"],
+                "fields": (
+                    "username",
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "password1",
+                    "password2",
+                ),
+            },
+        ),
     )
 
+    # Fields that are always read-only (cannot be edited via the admin form)
     readonly_fields = ("uuid", "created_at", "date_joined", "last_login")
 
 
+# ==============================================================================
+# 3. PROFILE ADMIN  (standalone view — useful for debugging reset tokens)
+# ==============================================================================
+
 @admin.register(Profile)
 class ProfileAdmin(ModelAdmin):
-    """
-    Separate admin view for Profiles, useful for debugging reset tokens.
-    """
     list_display = ("user", "has_reset_token", "reset_password_expire")
     search_fields = ("user__username", "user__email")
     list_select_related = ("user",)
@@ -132,29 +156,12 @@ class ProfileAdmin(ModelAdmin):
 
 
 # ==============================================================================
-# 2. DEFAULT AUTH MODELS UNREGISTER & UNFOLD RE-REGISTER
+# 4. GROUP ADMIN — unregister default, re-register with Unfold styling
 # ==============================================================================
 
-# Unregister default Group and re-register with Unfold
 admin.site.unregister(Group)
 
 
-# IMPORTANT: ModelAdmin MUST come before BaseGroupAdmin
 @admin.register(Group)
 class UnfoldGroupAdmin(ModelAdmin, BaseGroupAdmin):
-    pass
-
-
-# Unregister default AuthUser and re-register with Unfold (Safe wrapped)
-try:
-    admin.site.unregister(AuthUser)
-
-    # IMPORTANT: ModelAdmin MUST come before BaseUserAdmin
-    @admin.register(AuthUser)
-    class UnfoldAuthUserAdmin(ModelAdmin, BaseUserAdmin):
-        form = UserChangeForm
-        add_form = UserCreationForm
-        change_password_form = AdminPasswordChangeForm
-except admin.sites.NotRegistered:
-    # If AuthUser is already unregistered (e.g. by settings.AUTH_USER_MODEL)
     pass
