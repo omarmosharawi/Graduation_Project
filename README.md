@@ -98,6 +98,7 @@ Source: [The RE - Unified Project Plan](https://trello.com/1/cards/68ec1b92ffb2f
 backend/
 ├── apps/
 │   └── Users/        # Main application for user management and core logic
+│   └── ...
 ├── config/
 │   ├── settings/     # Django settings files
 │   ├── django/       # Django configurations
@@ -110,7 +111,8 @@ backend/
 
 ## 📚 API Documentation
 
-API documentation is available as a Postman collection: [The RE API Docoumentation](https://documenter.getpostman.com/view/38674073/2sB3QNqoqh)
+* **Postman Collection:** [The RE API Documentation](https://documenter.getpostman.com/view/38674073/2sB3QNqoqh)
+* **Local Interactive Docs (Swagger):** When the development server is running, you can explore and test the endpoints directly from your browser at: [http://localhost:8000/en/api/docs/](http://localhost:8000/en/api/docs/)
 
 ## 🤝 Contributing
 
