@@ -97,7 +97,7 @@ Source: [The RE - Unified Project Plan](https://trello.com/1/cards/68ec1b92ffb2f
 ```
 backend/
 ├── apps/
-│   └── Users/        # Main application for user management and core logic
+│   ├── Users/        # Main application for user management and core logic
 │   └── ...
 ├── config/
 │   ├── settings/     # Django settings files
