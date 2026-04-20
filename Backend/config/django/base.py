@@ -115,6 +115,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
+AUTH_USER_MODEL = 'Users.User'
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -182,6 +184,16 @@ UNFOLD = {
         "light": lambda request: static("images/logo.png"),
         "dark": lambda request: static("images/logo.png"),
     },
+
+    # Favicon
+    "SITE_FAVICONS": [
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "type": "image/x-icon",
+            "href": lambda request: static("images/favicon.ico"),
+        },
+    ],
 
     "COLORS": {
         "primary": {

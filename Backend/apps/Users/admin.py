@@ -1,13 +1,24 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
+from django.contrib.auth.models import Group, User as AuthUser
 from django.utils.translation import gettext_lazy as _
+
+# --- UNFOLD IMPORTS ---
+from unfold.admin import ModelAdmin, StackedInline
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+
+# --- LOCAL IMPORTS ---
 from .models import User, Profile
 
 
-class ProfileInline(admin.StackedInline):
+# ==============================================================================
+# 1. CUSTOM USER & PROFILE ADMIN
+# ==============================================================================
+
+class ProfileInline(StackedInline):
     """
-    Allows editing the User Profile (reset tokens, etc.) directly
-    inside the User edit page.
+    Allows editing the User Profile directly inside the User edit page.
     """
     model = Profile
     can_delete = False
@@ -15,12 +26,16 @@ class ProfileInline(admin.StackedInline):
     fk_name = 'user'
 
 
+# IMPORTANT: ModelAdmin MUST come before BaseUserAdmin!
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    # Add the Profile inline to the User admin
+class UserAdmin(ModelAdmin, BaseUserAdmin):
+    # Unfold Forms
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+
     inlines = (ProfileInline,)
 
-    # Columns to show in the list view
     list_display = (
         "username",
         "email",
@@ -32,7 +47,6 @@ class UserAdmin(BaseUserAdmin):
         "created_at",
     )
 
-    # Filters sidebar
     list_filter = (
         "is_staff",
         "is_superuser",
@@ -43,11 +57,9 @@ class UserAdmin(BaseUserAdmin):
         "accept_terms",
     )
 
-    # Fields to search by
     search_fields = ("username", "first_name", "last_name", "email", "phone", "uuid")
     ordering = ("-date_joined",)
 
-    # Organized field grouping for the Edit User page
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email", "phone", "profile_picture")}),
@@ -73,7 +85,7 @@ class UserAdmin(BaseUserAdmin):
         (
             _("OTP & Security"),
             {
-                "classes": ("collapse",),
+                "classes": ["collapse"],
                 "fields": ("otp", "otp_created_at", "otp_attempts"),
                 "description": "One-Time Password logs and tracking."
             }
@@ -87,18 +99,24 @@ class UserAdmin(BaseUserAdmin):
         (
             _("System Info"),
             {
-                "classes": ("collapse",),
+                "classes": ["collapse"],
                 "fields": ("uuid",)
             }
         ),
     )
 
-    # Fields that should not be editable
+    add_fieldsets = (
+        (None, {
+            "classes": ["wide"],
+            "fields": ("username", "email", "password", "first_name", "last_name"),
+        }),
+    )
+
     readonly_fields = ("uuid", "created_at", "date_joined", "last_login")
 
 
 @admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
+class ProfileAdmin(ModelAdmin):
     """
     Separate admin view for Profiles, useful for debugging reset tokens.
     """
@@ -111,3 +129,32 @@ class ProfileAdmin(admin.ModelAdmin):
 
     has_reset_token.boolean = True
     has_reset_token.short_description = "Reset Token Active"
+
+
+# ==============================================================================
+# 2. DEFAULT AUTH MODELS UNREGISTER & UNFOLD RE-REGISTER
+# ==============================================================================
+
+# Unregister default Group and re-register with Unfold
+admin.site.unregister(Group)
+
+
+# IMPORTANT: ModelAdmin MUST come before BaseGroupAdmin
+@admin.register(Group)
+class UnfoldGroupAdmin(ModelAdmin, BaseGroupAdmin):
+    pass
+
+
+# Unregister default AuthUser and re-register with Unfold (Safe wrapped)
+try:
+    admin.site.unregister(AuthUser)
+
+    # IMPORTANT: ModelAdmin MUST come before BaseUserAdmin
+    @admin.register(AuthUser)
+    class UnfoldAuthUserAdmin(ModelAdmin, BaseUserAdmin):
+        form = UserChangeForm
+        add_form = UserCreationForm
+        change_password_form = AdminPasswordChangeForm
+except admin.sites.NotRegistered:
+    # If AuthUser is already unregistered (e.g. by settings.AUTH_USER_MODEL)
+    pass
