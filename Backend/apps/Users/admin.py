@@ -13,14 +13,18 @@ from .models import User, Profile
 
 
 # ==============================================================================
-# 1. PROFILE INLINE
+# 1. CUSTOM USER CREATION FORM
 # ==============================================================================
+class CustomUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "email", "first_name", "last_name")
 
+
+# ==============================================================================
+# 2. PROFILE INLINE
+# ==============================================================================
 class ProfileInline(StackedInline):
-    """
-    Renders the User's Profile fields directly inside the User change/add page.
-    Setting can_delete=False prevents accidental profile deletion from the inline.
-    """
     model = Profile
     can_delete = False
     verbose_name_plural = "Profile"
@@ -28,125 +32,55 @@ class ProfileInline(StackedInline):
 
 
 # ==============================================================================
-# 2. CUSTOM USER ADMIN
+# 3. CUSTOM USER ADMIN
 # ==============================================================================
-
 @admin.register(User)
-class UserAdmin(ModelAdmin, BaseUserAdmin):
+class UserAdmin(BaseUserAdmin, ModelAdmin):  # BaseUserAdmin MUST be first!
 
-    # --- Unfold-aware forms ---
     form = UserChangeForm
-    add_form = UserCreationForm
+    add_form = CustomUserCreationForm
     change_password_form = AdminPasswordChangeForm
 
-    # --- Inline profile editing ---
-    inlines = (ProfileInline,)
+    inlines = [ProfileInline]
 
-    # --- List view columns ---
-    list_display = (
-        "username",
-        "email",
-        "first_name",
-        "last_name",
-        "is_staff",
-        "email_verified",
-        "phone_verified",
-        "created_at",
-    )
+    list_display = [
+        "username", "email", "first_name", "last_name",
+        "is_staff", "email_verified", "phone_verified", "created_at"
+    ]
 
-    # --- Sidebar filters ---
-    list_filter = (
-        "is_staff",
-        "is_superuser",
-        "is_active",
-        "groups",
-        "email_verified",
-        "phone_verified",
-        "accept_terms",
-    )
+    list_filter = ["is_staff", "is_superuser", "is_active", "email_verified"]
+    search_fields = ["username", "first_name", "last_name", "email", "phone"]
+    ordering = ["-date_joined"]
 
-    search_fields = ("username", "first_name", "last_name", "email", "phone", "uuid")
-    ordering = ("-date_joined",)
-
+    # STRIPPED OUT 'classes' ENTIRELY TO BYPASS THE UNFOLD BUG
     fieldsets = (
-        (
-            None,
-            {"fields": ("username", "password")},
-        ),
-        (
-            _("Personal info"),
-            {"fields": ("first_name", "last_name", "email", "phone", "profile_picture")},
-        ),
-        (
-            _("Permissions"),
-            {
-                "fields": (
-                    "is_active",
-                    "is_staff",
-                    "is_superuser",
-                    "groups",
-                    "user_permissions",
-                ),
-            },
-        ),
-        (
-            _("Verification Details"),
-            {
-                "fields": ("email_verified", "phone_verified", "accept_terms"),
-                "description": "Status of user verification steps.",
-            },
-        ),
-        (
-            _("OTP & Security"),
-            {
-                "classes": ["collapse"],
-                "fields": ("otp", "otp_created_at", "otp_attempts"),
-                "description": "One-Time Password logs and tracking.",
-            },
-        ),
-        (
-            _("Important dates"),
-            {"fields": ("last_login", "date_joined", "created_at")},
-        ),
-        (
-            _("System Info"),
-            {
-                "classes": ["collapse"],
-                "fields": ("uuid",),
-            },
-        ),
+        (None, {"fields": ("username", "password")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email", "phone", "profile_picture")}),
+        (_("Permissions"), {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        (_("Verification Details"), {"fields": ("email_verified", "phone_verified", "accept_terms")}),
+        (_("OTP & Security"), {"fields": ("otp", "otp_created_at", "otp_attempts")}),
+        (_("Important dates"), {"fields": ("last_login", "date_joined", "created_at")}),
+        (_("System Info"), {"fields": ("uuid",)}),
     )
 
+    # STRIPPED OUT 'classes' HERE AS WELL
     add_fieldsets = (
-        (
-            None,
-            {
-                "classes": ["wide"],
-                "fields": (
-                    "username",
-                    "email",
-                    "first_name",
-                    "last_name",
-                    "password1",
-                    "password2",
-                ),
-            },
-        ),
+        (None, {
+            "fields": ("username", "email", "first_name", "last_name", "password1", "password2"),
+        }),
     )
 
-    # Fields that are always read-only (cannot be edited via the admin form)
-    readonly_fields = ("uuid", "created_at", "date_joined", "last_login")
+    readonly_fields = ["uuid", "created_at", "date_joined", "last_login"]
 
 
 # ==============================================================================
-# 3. PROFILE ADMIN  (standalone view — useful for debugging reset tokens)
+# 4. PROFILE ADMIN
 # ==============================================================================
-
 @admin.register(Profile)
 class ProfileAdmin(ModelAdmin):
-    list_display = ("user", "has_reset_token", "reset_password_expire")
-    search_fields = ("user__username", "user__email")
-    list_select_related = ("user",)
+    list_display = ["user", "has_reset_token", "reset_password_expire"]
+    search_fields = ["user__username", "user__email"]
+    list_select_related = ["user"]
 
     def has_reset_token(self, obj):
         return bool(obj.reset_password_token)
@@ -156,12 +90,10 @@ class ProfileAdmin(ModelAdmin):
 
 
 # ==============================================================================
-# 4. GROUP ADMIN — unregister default, re-register with Unfold styling
+# 5. GROUP ADMIN
 # ==============================================================================
-
 admin.site.unregister(Group)
 
-
 @admin.register(Group)
-class UnfoldGroupAdmin(ModelAdmin, BaseGroupAdmin):
+class UnfoldGroupAdmin(BaseGroupAdmin, ModelAdmin):
     pass
