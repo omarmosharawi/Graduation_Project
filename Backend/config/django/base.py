@@ -52,7 +52,8 @@ SPECTACULAR_SETTINGS = {
 # ==============================================================================
 
 DEFAULT_APPS = [
-    "unfold",
+    "jazzmin",
+    # "unfold",
     "unfold.contrib.filters",
     "unfold.contrib.forms",
     "django.contrib.admin",
@@ -245,6 +246,42 @@ UNFOLD = {
     "SHOW_LANGUAGES": True,
 }
 
+# ==============================================================================
+# JAZZMIN ADMIN THEME CONFIGURATION
+# ==============================================================================
+
+JAZZMIN_SETTINGS = {
+    # Site titles and logos
+    "site_title": "The RE Admin",
+    "site_header": "The RE Platform",
+    "site_brand": "The RE Platform",
+    "site_logo": "images/logo.png",
+    "site_icon": "images/favicon.ico",
+    "site_logo_classes": "",
+
+    # Welcome text
+    "welcome_sign": "Welcome to The RE Platform Admin",
+    "copyright": "NovaDev",
+
+    # Custom CSS
+    "custom_css": "css/custom_admin.css",
+
+    # UI Builder: Enable this temporarily to tweak colors live in the browser!
+    # "show_ui_builder": True,
+}
+
+# Baseline UI Tweaks (Dark sidebar, sleek layout)
+JAZZMIN_UI_TWEAKS = {
+    "theme": "flatly",  # Clean, modern light theme
+    "dark_mode_theme": "darkly",  # Clean, modern dark theme
+    "sidebar": "sidebar-dark-warning",  # Dark sidebar with 'warning' (gold) accents
+    "brand_colour": "navbar-dark",
+    "accent": "accent-warning",
+    "button_classes": {
+        "primary": "btn-warning",  # Maps main buttons to the gold theme
+        "secondary": "btn-secondary",
+    }
+}
 
 # ==============================================================================
 # LOGGING
