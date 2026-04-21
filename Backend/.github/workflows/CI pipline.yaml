@@ -1,56 +1,95 @@
-# name of our workflow
-name: Django CI/CD Workflow
+name: The RE Platform CI/CD
 
-# triggers for our workflow
 on:
-  # opening a pull request to master and develop branch will be a trigger
-  pull_request:
-    branches:
-      - develop
-      - main
-  # any code pushed to master and develop branch will also be a trigger
   push:
-    branches:
-      - main
-      - develop
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
-# three job definition
 jobs:
-  health-check-job: # health check job for testing and code formatting check
-    runs-on: ubuntu-latest # os for running the job
+  test:
+    name: Run Tests & Linting
+    runs-on: ubuntu-latest
     
+    # Set up isolated background services for testing
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: re_platform_test
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:6-alpine
+        ports:
+          - 6379:6379
+
     steps:
-      - name: Checkout code # checking out the code at current commit that triggers the workflow
-        uses: actions/checkout@v2
+    - name: Checkout Source Code
+      uses: actions/checkout@v3
 
-      - name: Cache dependency # caching dependency will make our build faster.
-        uses: actions/cache@v2 # for more info check pip section documentation at https://github.com/actions/cache
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: 'pip'
 
-      - name: Setup python environment # setting python environment to 3.x
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.11' # if you want multiple python versions run just use matrix strategy in job config. See the documentation of GitHub Actions
+    - name: Install Dependencies
+      working-directory: ./Backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Flake8 Linting
+      working-directory: ./Backend
+      run: |
+        # Stop the build if there are syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+
+    - name: Django System Check
+      working-directory: ./Backend
+      env:
+        SECRET_KEY: 'test-key-do-not-use-in-production'
+        POSTGRES_DB: re_platform_test
+        POSTGRES_USER: testuser
+        POSTGRES_PASSWORD: testpassword
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+      run: |
+        python manage.py check
+
+  deploy:
+    name: Deploy to Hostinger VPS
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Execute Remote SSH Commands
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.HOSTINGER_IP }}
+        username: ${{ secrets.HOSTINGER_USER }}
+        key: ${{ secrets.HOSTINGER_SSH_KEY }}
+        script: |
+          cd /path/to/your/project/folder
           
-      - name: Check Python version # checking the python version to see if 3.x is installed.
-        run: python --version
-
-      - name: Install requirements # install application requirements
-        run: pip install -r requirements.txt
-
-      - name: Check Code Quality with flake8 # Run flake8 to check code quality
-        run: flake8 .
-
-      - name: Run Migrations # run migrations to create tables in the sidecar db container
-        run: python manage.py migrate
-        
-      - name: Run Tests # running tests
-        run: python manage.py test
-      
-      - name: Run Django Development Server
-        run: |
-          python manage.py runserver 0.0.0.0:8000 &
+          # Pull latest code
+          git pull origin main
+          
+          # Rebuild and restart Docker containers in the background
+          docker-compose -f Backend/Docker/docker-compose.yml down
+          docker-compose -f Backend/Docker/docker-compose.yml build --no-cache
+          docker-compose -f Backend/Docker/docker-compose.yml up -d
+          
+          # Clean up old dangling Docker images to save VPS storage
+          docker image prune -f
