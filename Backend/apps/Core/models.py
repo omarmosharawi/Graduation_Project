@@ -41,7 +41,7 @@ class RecyclingTransaction(models.Model):
     transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user = models.ForeignKey(User, related_name="transactions", on_delete=models.CASCADE)
     kiosk = models.ForeignKey(Kiosk, on_delete=models.SET_NULL, null=True)
-    material_count = models.DecimalField(max_digits=5)
+    weight_kg = models.DecimalField(max_digits=6, decimal_places=2)
     points_earned = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
