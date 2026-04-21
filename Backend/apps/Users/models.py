@@ -76,6 +76,19 @@ class Profile(models.Model):
         related_name="profile",
         on_delete=models.CASCADE
     )
+
+    # Gamification: Dual-Point System
+    current_points = models.IntegerField(default=0, help_text="Spendable points for rewards.")
+    total_points = models.IntegerField(default=0, help_text="Lifetime points determining rank.")
+
+    # Rank System
+    RANK_CHOICES = (
+        ('Bronze', 'Bronze'),
+        ('Silver', 'Silver'),
+        ('Gold', 'Gold'),
+    )
+    rank = models.CharField(max_length=20, choices=RANK_CHOICES, default='Bronze')
+
     reset_password_token = models.CharField(
         max_length=50,
         default="",
@@ -85,6 +98,14 @@ class Profile(models.Model):
         null=True,
         blank=True
     )
+
+    def check_and_update_rank(self):
+        """Automatically upgrades rank based on lifetime Total Points."""
+        if self.total_points >= 5000 and self.rank != 'Gold':
+            self.rank = 'Gold'
+        elif self.total_points >= 2000 and self.rank == 'Bronze':
+            self.rank = 'Silver'
+        self.save(update_fields=['rank'])
 
 
 @receiver(post_save, sender=User)
