@@ -41,10 +41,9 @@ urlpatterns += i18n_patterns(
 
     # Prefix APIs with versioning to allow future breaking changes without breaking mobile apps/frontends.
     path("api/v1/auth/", include(url_Auth)),
-    path("api/v1/users/", include("apps.Users.urls")),  # Better to group user URLs inside the app
+    path("api/v1/users/", include("apps.Users.urls")),
+    path('api/v1/core/', include('apps.Core.urls')),
 )
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-# urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
