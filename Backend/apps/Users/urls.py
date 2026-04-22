@@ -2,6 +2,7 @@ from django.urls import path, include
 from . import views
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
+from views import FirebaseGoogleAuthView
 
 router = DefaultRouter()
 router.register(r"SignUp", views.SignUPViewSet, basename="SignUp")
@@ -59,4 +60,7 @@ urlpatterns = [
     path("update-fcm-token/", views.UpdateFCMTokenView.as_view(), name="update_fcm_token"),
 
     path('profile/referral/', views.ApplyReferralCodeView.as_view(), name='apply-referral'),
+
+    # Social Auth
+    path('auth/google/', FirebaseGoogleAuthView.as_view(), name='auth_google_firebase'),
 ]

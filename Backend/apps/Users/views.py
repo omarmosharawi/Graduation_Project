@@ -1,9 +1,10 @@
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, status, generics
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import redirect
@@ -13,6 +14,9 @@ from .serializers import InputSerializers
 from .permissions import IsAdminOrPostOnly
 from .Tasks import Auth_tasks, password_tasks, google_auth_tasks
 from .db_queries import selectors, services
+from firebase_admin import auth as firebase_auth
+from django.utils.crypto import get_random_string
+from .serializers.InputSerializers import GoogleAuthSerializer
 
 
 # New Logic
@@ -252,3 +256,95 @@ class ApplyReferralCodeView(APIView):
 
         except Profile.DoesNotExist:
             return Response({"error": "Invalid referral code."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class FirebaseGoogleAuthView(generics.GenericAPIView):
+    """
+    Handles both Login and Registration via Google Firebase.
+    Mobile app sends the Firebase ID token. Backend verifies it and issues SimpleJWTs.
+    """
+    permission_classes = (AllowAny,)
+    serializer_class = GoogleAuthSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        id_token = serializer.validated_data['id_token']
+
+        try:
+            # 1. Verify the token with Google/Firebase servers
+            decoded_token = firebase_auth.verify_id_token(id_token)
+
+            # 2. Extract user data from the verified token
+            email = decoded_token.get('email')
+            name = decoded_token.get('name', '')
+            picture = decoded_token.get('picture', '')
+
+            if not email:
+                return Response({"error": "Google account must have an email address associated."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            # Split name into first and last
+            name_parts = name.split(' ', 1)
+            first_name = name_parts[0] if len(name_parts) > 0 else ''
+            last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+            # 3. Check if user already exists
+            user = User.objects.filter(email=email).first()
+
+            if not user:
+                # REGISTER FLOW: Create a new user instantly
+                # Generate a safe, unique username from the email
+                base_username = email.split('@')[0]
+                username = base_username
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}{get_random_string(4)}"
+
+                user = User.objects.create(
+                    username=username,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email_verified=True,  # Pre-verified by Google!
+                )
+                # Users logging in with Google shouldn't use a standard password
+                user.set_unusable_password()
+                user.save()
+
+                # If you have a signal that creates the Profile automatically, great.
+                # If not, ensure the Profile is created here:
+                # Profile.objects.get_or_create(user=user)
+
+                message = "Registration successful via Google."
+                status_code = status.HTTP_201_CREATED
+            else:
+                # LOGIN FLOW: User exists, just log them in
+                message = "Login successful via Google."
+                status_code = status.HTTP_200_OK
+
+            # 4. Generate Django SimpleJWT Tokens
+            refresh = RefreshToken.for_user(user)
+
+            return Response({
+                "message": message,
+                "tokens": {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "rank": user.profile.rank,  # Assuming Profile relationship
+                    "current_points": user.profile.current_points
+                }
+            }, status=status_code)
+
+        except firebase_auth.InvalidIdTokenError:
+            return Response({"error": "Invalid Google Firebase ID token."}, status=status.HTTP_401_UNAUTHORIZED)
+        except firebase_auth.ExpiredIdTokenError:
+            return Response({"error": "Google Firebase ID token has expired."}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return Response({"error": f"Authentication failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)

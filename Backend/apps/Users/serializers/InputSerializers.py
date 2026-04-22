@@ -9,6 +9,7 @@ from rest_framework.serializers import (
 from ..models import User
 from ..Tasks import serializers_tasks
 from ..db_queries import services
+from ...Core import serializers
 
 
 class SignUpSerializer(ModelSerializer):
@@ -64,3 +65,7 @@ class SignUpSerializer(ModelSerializer):
         unique_username = serializers_tasks.generate_unique_username(first_name, last_name, User)
         created_user = services.Create_user(validated_data, unique_username)
         return created_user
+
+
+class GoogleAuthSerializer(serializers.Serializer):
+    id_token = serializers.CharField(required=True, help_text="The Firebase ID token received from the mobile app.")
