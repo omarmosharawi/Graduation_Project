@@ -31,7 +31,7 @@ class KioskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Kiosk
-        fields = ('id', 'location_name')
+        fields = ('id', 'name', 'location_name', 'latitude', 'longitude', 'is_operational')
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -44,12 +44,9 @@ class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecyclingTransaction
         fields = (
-            'transaction_id',
-            'kiosk',
-            'weight_kg',
-            'points_earned',
-            'created_at',
-            'date_formatted'
+            'transaction_id', 'kiosk',
+            'material_type', 'material_count', 'weight_kg',
+            'points_earned', 'created_at', 'date_formatted'
         )
 
     def get_date_formatted(self, obj):

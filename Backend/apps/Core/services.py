@@ -13,10 +13,21 @@ class CoreService:
 
     @staticmethod
     @transaction.atomic
-    def process_recycling(user, kiosk_id, weight_kg):
-        """Calculates points, records transaction, and updates user profile safely."""
-        # 1 KG = 10 Points (Configurable multiplier)
-        points_earned = int(float(weight_kg) * 10)
+    def process_recycling(user, kiosk_id, weight_kg, material_type='MIXED', material_count=1):
+        """Calculates points based on weight and material, then updates user profile."""
+
+        # Base multiplier logic based on material type
+        multipliers = {
+            'PLASTIC': 15,
+            'CANS': 20,
+            'GLASS': 10,
+            'PAPER': 5,
+            'MIXED': 10
+        }
+        multiplier = multipliers.get(material_type, 10)
+
+        # Calculate points (Weight * Material Multiplier * Count Bonus)
+        points_earned = int(float(weight_kg) * multiplier) + (int(material_count) * 2)
 
         kiosk = Kiosk.objects.get(id=kiosk_id)
 
@@ -24,6 +35,8 @@ class CoreService:
         trx = RecyclingTransaction.objects.create(
             user=user,
             kiosk=kiosk,
+            material_type=material_type,
+            material_count=material_count,
             weight_kg=weight_kg,
             points_earned=points_earned
         )

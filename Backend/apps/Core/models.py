@@ -156,3 +156,11 @@ class DelegateRequest(models.Model):
 
     def __str__(self):
         return f"Pickup for {self.user.username} on {self.scheduled_date} ({self.material_count}x {self.get_material_type_display()})"
+
+
+# A "Dummy" Model purely to attach our Admin Dashboard to
+class CommunityImpact(models.Model):
+    class Meta:
+        managed = False # Django won't try to create a database table for this
+        verbose_name = 'Community Impact Dashboard'
+        verbose_name_plural = 'Community Impact Dashboard'
