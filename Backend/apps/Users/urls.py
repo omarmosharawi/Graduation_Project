@@ -54,4 +54,7 @@ urlpatterns = [
     path("userinfo/", views.UserInfo.as_view(), name="user_info"),
     path("password/", include(url_Password)),
     path("google_auth/", include(url_google_auth)),
+
+    # Add to your urlpatterns
+    path("update-fcm-token/", views.UpdateFCMTokenView.as_view(), name="update_fcm_token"),
 ]

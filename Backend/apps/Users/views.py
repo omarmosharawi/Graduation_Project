@@ -201,3 +201,19 @@ class APILogoutView(APIView):
     def post(self, request, *args, **kwargs):
         response_data = Auth_tasks.logout_user(self, request, *args, **kwargs)
         return Response(response_data, status=HTTP_200_OK)
+
+
+class UpdateFCMTokenView(APIView):
+    """Allows the mobile app to register the device for push notifications."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('fcm_token')
+        if not token:
+            return Response({"error": "fcm_token is required"}, status=HTTP_400_BAD_REQUEST)
+
+        profile = request.user.profile
+        profile.fcm_token = token
+        profile.save(update_fields=['fcm_token'])
+
+        return Response({"status": "Device registered for notifications"}, status=HTTP_200_OK)

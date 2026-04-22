@@ -23,3 +23,4 @@ code
 local_data.json
 Pipfile
 Pipfile.lock
+firebase-service-account.json

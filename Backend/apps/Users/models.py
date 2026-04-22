@@ -89,6 +89,14 @@ class Profile(models.Model):
     )
     rank = models.CharField(max_length=20, choices=RANK_CHOICES, default='Bronze')
 
+    # Push Notifications
+    fcm_token = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Firebase Cloud Messaging token for Android device"
+    )
+
     reset_password_token = models.CharField(
         max_length=50,
         default="",

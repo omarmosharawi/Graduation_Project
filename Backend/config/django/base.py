@@ -284,6 +284,26 @@ JAZZMIN_UI_TWEAKS = {
     }
 }
 
+
+# ==============================================================================
+# FIREBASE CLOUD MESSAGING
+# ==============================================================================
+import os
+import firebase_admin
+from firebase_admin import credentials
+
+
+FIREBASE_KEY_PATH = os.path.join(BASE_DIR, "firebase-service-account.json")
+
+if not firebase_admin._apps:
+    try:
+        cred = credentials.Certificate(FIREBASE_KEY_PATH)
+        firebase_admin.initialize_app(cred)
+        print("Firebase Admin Initialized Successfully.")
+    except Exception as e:
+        print(f"Warning: Firebase Admin failed to initialize. {e}")
+
+
 # ==============================================================================
 # LOGGING
 # ==============================================================================

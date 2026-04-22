@@ -6,6 +6,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from datetime import timedelta
 from .models import RecyclingTransaction, RewardRedemption, Reward, Kiosk, UserBadge, Badge
+from apps.Core.Tasks.notification_tasks import send_achievement_push_notification
 
 
 class CoreService:
@@ -126,7 +127,7 @@ class GamificationService:
                 UserBadge.objects.create(user=user, badge=badge)
                 new_badges.append(badge)
 
-                # TODO: Trigger Firebase Cloud Messaging (FCM) here
-                # e.g., send_fcm_push(user, "Achievement Unlocked!", f"You earned the {badge.name} badge.")
+                # TRIGGER THE ASYNC PUSH NOTIFICATION
+                send_achievement_push_notification.delay(user.id, badge.name)
 
         return new_badges
