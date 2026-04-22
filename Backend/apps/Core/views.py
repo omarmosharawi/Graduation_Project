@@ -3,8 +3,8 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Reward, RecyclingTransaction
-from .serializers import RewardSerializer, TransactionSerializer
-from .services import CoreService, GamificationService
+from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer
+from .services import CoreService, GamificationService, DelegateService, DelegateRequest
 from django.core.exceptions import ValidationError
 
 
@@ -88,3 +88,30 @@ class UserBadgesView(APIView):
             } for ub in user_badges
         ]
         return Response({"badges": data}, status=200)
+
+
+class DelegateRequestListView(generics.ListCreateAPIView):
+    """User can list their pickup requests and create new ones."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = DelegateRequestSerializer
+
+    def get_queryset(self):
+        return DelegateRequest.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            pickup = DelegateService.create_pickup_request(
+                user=request.user,
+                data=serializer.validated_data
+            )
+            return Response({
+                "message": f"Delegate requested successfully. Estimated cost: {pickup.cost_in_points} points.",
+                "data": self.get_serializer(pickup).data,
+                "remaining_points": request.user.profile.current_points
+            }, status=status.HTTP_201_CREATED)
+
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

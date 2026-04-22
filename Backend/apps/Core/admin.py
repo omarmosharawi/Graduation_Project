@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Partner, Reward, Kiosk, RecyclingTransaction, RewardRedemption, Badge, UserBadge, CustomNotification
+from .models import Partner, Reward, Kiosk, RecyclingTransaction, RewardRedemption, Badge, UserBadge, CustomNotification, DelegateRequest
 from .Tasks.notification_tasks import process_custom_notification
 
 
@@ -114,3 +114,12 @@ class CustomNotificationAdmin(admin.ModelAdmin):
             # Mark as sent
             obj.is_sent = True
             obj.save(update_fields=['is_sent'])
+
+
+@admin.register(DelegateRequest)
+class DelegateRequestAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'scheduled_date', 'scheduled_time', 'material_type', 'material_count', 'status', 'cost_in_points')
+    list_filter = ('status', 'scheduled_date', 'material_type')
+    search_fields = ('user__username', 'pickup_address')
+    list_editable = ('status',)
+    readonly_fields = ('cost_in_points', 'created_at')

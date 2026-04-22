@@ -5,7 +5,7 @@ from apps.Users.models import Profile
 from django.db.models import Sum
 from django.utils import timezone
 from datetime import timedelta
-from .models import RecyclingTransaction, RewardRedemption, Reward, Kiosk, UserBadge, Badge
+from .models import RecyclingTransaction, RewardRedemption, Reward, Kiosk, UserBadge, Badge, DelegateRequest
 from apps.Core.Tasks.notification_tasks import send_achievement_push_notification
 
 
@@ -131,3 +131,39 @@ class GamificationService:
                 send_achievement_push_notification.delay(user.id, badge.name)
 
         return new_badges
+
+
+class DelegateService:
+
+    @staticmethod
+    @transaction.atomic
+    def create_pickup_request(user, data):
+        """Creates a delegate request and handles premium conditions."""
+        profile = user.profile
+
+        # Premium Condition: 50 points, but FREE for Gold rank users.
+        cost = 0 if profile.rank == 'Gold' else 50
+
+        if profile.current_points < cost:
+            raise ValidationError(
+                f"Insufficient points. This premium service costs {cost} points for {profile.rank} rank users.")
+
+        # Deduct points if applicable
+        if cost > 0:
+            profile.current_points -= cost
+            profile.save(update_fields=['current_points'])
+
+        # Create the request
+        request = DelegateRequest.objects.create(
+            user=user,
+            pickup_address=data['pickup_address'],
+            latitude=data.get('latitude'),
+            longitude=data.get('longitude'),
+            scheduled_date=data['scheduled_date'],
+            scheduled_time=data['scheduled_time'],
+            material_type=data.get('material_type', 'MIXED'),
+            material_count=data.get('material_count', 1),
+            cost_in_points=cost
+        )
+
+        return request

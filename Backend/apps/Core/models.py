@@ -109,3 +109,40 @@ class CustomNotification(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.get_target_display()}"
+
+
+class DelegateRequest(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending (Awaiting Assignment)'),
+        ('ASSIGNED', 'Assigned to Delegate'),
+        ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled'),
+    )
+
+    MATERIAL_CHOICES = (
+        ('PLASTIC', 'Plastic Bottles/Containers'),
+        ('GLASS', 'Glass Bottles/Jars'),
+        ('PAPER', 'Paper/Cardboard'),
+        ('CANS', 'Aluminum/Metal Cans'),
+        ('MIXED', 'Mixed Recyclables'),
+    )
+
+    user = models.ForeignKey(User, related_name='delegate_requests', on_delete=models.CASCADE)
+    pickup_address = models.TextField(help_text="Full address or descriptive location details.")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
+    scheduled_date = models.DateField()
+    scheduled_time = models.TimeField()
+
+    material_type = models.CharField(max_length=20, choices=MATERIAL_CHOICES, default='MIXED')
+    material_count = models.PositiveIntegerField(default=1, help_text="Number of bags or boxes.")
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    estimated_arrival_time = models.DateTimeField(null=True, blank=True)
+    cost_in_points = models.IntegerField(default=50, help_text="Points deducted for this premium service.")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Pickup for {self.user.username} on {self.scheduled_date} ({self.material_count}x {self.get_material_type_display()})"

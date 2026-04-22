@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Partner, Reward, Kiosk, RecyclingTransaction
+from .models import Partner, Reward, Kiosk, RecyclingTransaction, DelegateRequest
 
 
 class PartnerSerializer(serializers.ModelSerializer):
@@ -54,3 +54,15 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     def get_date_formatted(self, obj):
         return obj.created_at.strftime("%B %d, %Y - %I:%M %p")
+
+
+class DelegateRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DelegateRequest
+        fields = (
+            'id', 'pickup_address', 'latitude', 'longitude',
+            'scheduled_date', 'scheduled_time',
+            'material_type', 'material_count', 'status',
+            'estimated_arrival_time', 'cost_in_points', 'created_at'
+        )
+        read_only_fields = ('id', 'status', 'estimated_arrival_time', 'cost_in_points', 'created_at')

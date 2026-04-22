@@ -4,7 +4,8 @@ from .views import (
     RedeemRewardView,
     TransactionHistoryView,
     LeaderboardView,
-    UserBadgesView
+    UserBadgesView,
+    DelegateRequestListView,
 )
 
 app_name = 'core'
@@ -20,4 +21,7 @@ urlpatterns = [
     # Gamification
     path('leaderboard/', LeaderboardView.as_view(), name='leaderboard'),
     path('badges/mine/', UserBadgesView.as_view(), name='my-badges'),
+
+    # Delegate Service
+    path('delegate-requests/', DelegateRequestListView.as_view(), name='delegate-requests'),
 ]
