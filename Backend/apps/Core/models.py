@@ -87,3 +87,25 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.badge.name}"
+
+
+class CustomNotification(models.Model):
+    TARGET_CHOICES = (
+        ('ALL', 'All Users'),
+        ('SPECIFIC', 'Specific Users'),
+    )
+
+    title = models.CharField(max_length=255, help_text="The main heading of the push notification.")
+    body = models.TextField(help_text="The main text content of the notification.")
+    target = models.CharField(max_length=15, choices=TARGET_CHOICES, default='ALL')
+    specific_users = models.ManyToManyField(
+        User,
+        blank=True,
+        help_text="Select users here if 'Specific Users' is chosen above."
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_sent = models.BooleanField(default=False, help_text="Indicates if the Celery task has processed this.")
+
+    def __str__(self):
+        return f"{self.title} - {self.get_target_display()}"
