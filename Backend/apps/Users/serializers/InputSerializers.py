@@ -9,7 +9,7 @@ from rest_framework.serializers import (
 from ..models import User
 from ..Tasks import serializers_tasks
 from ..db_queries import services
-from ...Core import serializers
+from rest_framework import serializers
 
 
 class SignUpSerializer(ModelSerializer):
