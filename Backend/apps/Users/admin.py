@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User
@@ -7,6 +9,28 @@ try:
     from .models import Profile
 except ImportError:
     pass
+
+
+# ==========================================
+# CUSTOM FILTER FOR GOOGLE AUTH
+# ==========================================
+class AuthMethodFilter(admin.SimpleListFilter):
+    title = _('Login Method')
+    parameter_name = 'auth_method'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('google', _('Google (Firebase)')),
+            ('standard', _('Standard (Email/Password)')),
+        )
+
+    def queryset(self, request, queryset):
+        # Users who sign up with Google have their password set to unusable (starts with '!')
+        if self.value() == 'google':
+            return queryset.filter(password__startswith='!')
+        if self.value() == 'standard':
+            return queryset.exclude(password__startswith='!')
+        return queryset
 
 
 class ProfileInline(admin.StackedInline):
@@ -31,10 +55,10 @@ class CustomUserAdmin(admin.ModelAdmin):
     inlines = (ProfileInline,)
 
     # What shows up on the main list table
-    list_display = ('uuid', 'username', 'email', 'phone', 'first_name', 'last_name', 'is_active', 'email_verified', 'phone_verified')
+    list_display = ('uuid', 'username', 'email', 'phone', 'login_method', 'first_name', 'last_name', 'is_active', 'email_verified', 'phone_verified')
 
     # Filters on the right sidebar
-    list_filter = ('is_active', 'is_staff', 'email_verified', 'phone_verified')
+    list_filter = ('is_active', AuthMethodFilter, 'is_staff', 'email_verified', 'phone_verified')
 
     # Search bar targets
     search_fields = ('username', 'email', 'phone', 'first_name', 'last_name', 'uuid')
@@ -57,6 +81,17 @@ class CustomUserAdmin(admin.ModelAdmin):
             'fields': ('last_login',)
         }),
     )
+
+    # DEFINE THE UI FOR THE LOGIN METHOD COLUMN
+    def login_method(self, obj):
+        """Displays a clean UI badge indicating if the user uses Google or Password."""
+        if not obj.has_usable_password():
+            return format_html(
+                '<span style="color: white; background-color: #DB4437; padding: 3px 8px; border-radius: 4px; font-weight: bold;">Google</span>')
+        return format_html(
+            '<span style="color: white; background-color: #4CAF50; padding: 3px 8px; border-radius: 4px; font-weight: bold;">Standard</span>')
+
+    login_method.short_description = "Auth Method"
 
 
 # Register Profile separately so you can filter specifically by Gamification Ranks
