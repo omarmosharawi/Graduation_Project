@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from uuid import uuid4
+from django.utils.crypto import get_random_string
 
 
 class User(AbstractUser):
@@ -106,6 +107,15 @@ class Profile(models.Model):
         null=True,
         blank=True
     )
+
+    # Referral System
+    invite_code = models.CharField(max_length=8, unique=True, blank=True)
+    referred_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='referrals')
+    def save(self, *args, **kwargs):
+        if not self.invite_code:
+            # Generate a unique 8-character invite code on profile creation
+            self.invite_code = get_random_string(8).upper()
+        super().save(*args, **kwargs)
 
     def check_and_update_rank(self):
         """Automatically upgrades rank based on lifetime Total Points."""

@@ -1,14 +1,14 @@
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import redirect
 from django.utils import timezone
-from .models import User
+from .models import User, Profile
 from .serializers import InputSerializers
 from .permissions import IsAdminOrPostOnly
 from .Tasks import Auth_tasks, password_tasks, google_auth_tasks
@@ -217,3 +217,38 @@ class UpdateFCMTokenView(APIView):
         profile.save(update_fields=['fcm_token'])
 
         return Response({"status": "Device registered for notifications"}, status=HTTP_200_OK)
+
+
+class ApplyReferralCodeView(APIView):
+    """System where users invite friends for bonus points."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        invite_code = request.data.get('invite_code')
+        profile = request.user.profile
+
+        if profile.referred_by:
+            return Response({"error": "You have already used a referral code."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if profile.invite_code == invite_code:
+            return Response({"error": "You cannot use your own code."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            referrer_profile = Profile.objects.get(invite_code=invite_code)
+
+            # Link them
+            profile.referred_by = referrer_profile
+
+            # Grant Bonus Points (e.g., 100 points each)
+            profile.current_points += 100
+            profile.total_points += 100
+            profile.save(update_fields=['referred_by', 'current_points', 'total_points'])
+
+            referrer_profile.current_points += 100
+            referrer_profile.total_points += 100
+            referrer_profile.save(update_fields=['current_points', 'total_points'])
+
+            return Response({"message": "Referral successful! 100 bonus points added."}, status=status.HTTP_200_OK)
+
+        except Profile.DoesNotExist:
+            return Response({"error": "Invalid referral code."}, status=status.HTTP_404_NOT_FOUND)

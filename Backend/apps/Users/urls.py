@@ -57,4 +57,6 @@ urlpatterns = [
 
     # Add to your urlpatterns
     path("update-fcm-token/", views.UpdateFCMTokenView.as_view(), name="update_fcm_token"),
+
+    path('profile/referral/', views.ApplyReferralCodeView.as_view(), name='apply-referral'),
 ]
