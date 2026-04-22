@@ -2,10 +2,12 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Reward, RecyclingTransaction, Kiosk
+from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption
+from apps.Users.models import User
 from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer
 from .services import CoreService, GamificationService, DelegateService, DelegateRequest
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 
 
 class RewardsCatalogView(generics.ListAPIView):
@@ -122,3 +124,25 @@ class KioskMapView(generics.ListAPIView):
     queryset = Kiosk.objects.filter(is_operational=True)
     serializer_class = KioskSerializer
     permission_classes = [IsAuthenticated]
+
+
+class CommunityImpactView(APIView):
+    """Dashboard showing the community's collective impact."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        total_weight_stats = RecyclingTransaction.objects.aggregate(total_kg=Sum('weight_kg'))
+        total_kg = total_weight_stats['total_kg'] or 0
+
+        # Environmental conversion (Example: 1 KG of plastic saves ~1.5 KG of CO2)
+        co2_saved = float(total_kg) * 1.5
+
+        total_users = User.objects.count()
+        total_redemptions = RewardRedemption.objects.count()
+
+        return Response({
+            "total_weight_recycled_kg": total_kg,
+            "estimated_co2_saved_kg": co2_saved,
+            "total_active_recyclers": total_users,
+            "total_rewards_claimed": total_redemptions
+        }, status=status.HTTP_200_OK)
