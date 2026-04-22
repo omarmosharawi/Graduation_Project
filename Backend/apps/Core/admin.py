@@ -266,6 +266,13 @@ class CommunityImpactAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def get_queryset(self, request):
+        # Return an empty queryset so no rows are queried or displayed
+        return super().get_queryset(request).none()
+
     def changelist_view(self, request, extra_context=None):
         # 1. Calculate Live Stats
         total_weight_stats = RecyclingTransaction.objects.aggregate(total_kg=Sum('weight_kg'))

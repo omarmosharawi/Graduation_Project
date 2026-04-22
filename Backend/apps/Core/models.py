@@ -159,8 +159,9 @@ class DelegateRequest(models.Model):
 
 
 # A "Dummy" Model purely to attach our Admin Dashboard to
-class CommunityImpact(models.Model):
+class CommunityImpact(RecyclingTransaction):
     class Meta:
-        managed = False # Django won't try to create a database table for this
+        # managed = False # Django won't try to create a database table for this
+        proxy = True  # This is the magic keyword
         verbose_name = 'Community Impact Dashboard'
         verbose_name_plural = 'Community Impact Dashboard'
