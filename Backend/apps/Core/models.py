@@ -31,7 +31,7 @@ class Reward(models.Model):
 
 class Kiosk(models.Model):
     """Smart Kiosk locations for the interactive map."""
-    name = models.CharField(max_length=255, default="Standard Kiosk", help_text="Specific name or ID of the Kiosk.")
+    name = models.CharField(max_length=255, unique=True, help_text="Specific unique name or ID of the Kiosk.")
     location_name = models.CharField(max_length=255)
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
