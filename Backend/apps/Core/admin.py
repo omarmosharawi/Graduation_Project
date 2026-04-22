@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.contrib import messages
 from django.utils.html import format_html
+from django.db.models import Sum
+from apps.Users.models import User
 from .models import (
     Partner, Reward, Kiosk, RecyclingTransaction,
     RewardRedemption, Badge, UserBadge,
-    CustomNotification, DelegateRequest
+    CustomNotification, DelegateRequest, CommunityImpact
 )
 from .Tasks.notification_tasks import process_custom_notification
 
@@ -68,15 +70,15 @@ class RewardAdmin(admin.ModelAdmin):
 
 @admin.register(Kiosk)
 class KioskAdmin(admin.ModelAdmin):
-    list_display = ('id', 'location_name', 'latitude', 'longitude', 'is_operational')
-    search_fields = ('location_name',)
+    list_display = ('id', 'name', 'location_name', 'latitude', 'longitude', 'is_operational')
+    search_fields = ('name', 'location_name')
     list_filter = ('is_operational',)
     list_editable = ('is_operational',)
     ordering = ('id',)
 
     fieldsets = (
         ('Kiosk Details', {
-            'fields': ('location_name', 'is_operational')
+            'fields': ('name', 'location_name', 'is_operational')
         }),
         ('Map Coordinates', {
             'fields': ('latitude', 'longitude')
@@ -86,10 +88,12 @@ class KioskAdmin(admin.ModelAdmin):
 
 @admin.register(RecyclingTransaction)
 class RecyclingTransactionAdmin(admin.ModelAdmin):
-    list_display = ('transaction_id', 'user', 'kiosk', 'weight_kg', 'points_earned', 'created_at')
-    search_fields = ('user__username', 'user__email', 'user__phone', 'kiosk__location_name', 'transaction_id')
-    list_filter = ('created_at', 'kiosk')
-    readonly_fields = ('transaction_id', 'created_at', 'user', 'kiosk', 'weight_kg', 'points_earned')
+    list_display = ('transaction_id', 'user', 'kiosk', 'material_type', 'material_count', 'weight_kg', 'points_earned',
+                    'created_at')
+    search_fields = ('user__username', 'user__email', 'user__phone', 'kiosk__name', 'kiosk__location_name', 'transaction_id')
+    list_filter = ('created_at', 'kiosk', 'material_type')
+    readonly_fields = ('transaction_id', 'created_at', 'user', 'kiosk', 'material_type', 'material_count', 'weight_kg',
+                       'points_earned')
     ordering = ('-created_at',)
 
     fieldsets = (
@@ -97,7 +101,7 @@ class RecyclingTransactionAdmin(admin.ModelAdmin):
             'fields': ('transaction_id', 'created_at')
         }),
         ('Transaction Details', {
-            'fields': ('user', 'kiosk', 'weight_kg', 'points_earned')
+            'fields': ('user', 'kiosk', 'material_type', 'material_count', 'weight_kg', 'points_earned')
         }),
     )
 
@@ -243,3 +247,44 @@ class DelegateRequestAdmin(admin.ModelAdmin):
         # Note: If cancelled, you might want logic to refund points to the user.
         updated = queryset.update(status='CANCELLED')
         self.message_user(request, f"{updated} requests marked as Cancelled.", messages.WARNING)
+
+
+# ==========================================
+# THE COMMUNITY IMPACT DASHBOARD
+# ==========================================
+
+@admin.register(CommunityImpact)
+class CommunityImpactAdmin(admin.ModelAdmin):
+    """
+    A custom admin dashboard using a proxy model. It calculates the live platform
+    stats and displays them at the top of the page.
+    """
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        # 1. Calculate Live Stats
+        total_weight_stats = RecyclingTransaction.objects.aggregate(total_kg=Sum('weight_kg'))
+        total_kg = total_weight_stats['total_kg'] or 0
+        co2_saved = float(total_kg) * 1.5
+        total_users = User.objects.count()
+        total_redemptions = RewardRedemption.objects.count()
+
+        # 2. Inject the stats into the Django UI securely using the messages framework
+        # This renders beautifully across standard Django, Jazzmin, and Unfold!
+        dashboard_html = f"""
+        <div style="font-size: 16px; padding: 10px; line-height: 1.8;">
+            <b>🌍 LIVE PLATFORM IMPACT:</b><br>
+            • Total Active Recyclers: <b>{total_users} users</b><br>
+            • Total Weight Recycled: <b>{total_kg} KG</b><br>
+            • Estimated CO2 Saved: <b>{co2_saved} KG</b><br>
+            • Total Rewards Claimed: <b>{total_redemptions} vouchers</b>
+        </div>
+        """
+        messages.info(request, format_html(dashboard_html))
+
+        return super().changelist_view(request, extra_context=extra_context)
