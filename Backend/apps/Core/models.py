@@ -43,15 +43,24 @@ class Kiosk(models.Model):
 
 class RecyclingTransaction(models.Model):
     """Records every time a user recycles at a kiosk."""
+    MATERIAL_CHOICES = (
+        ('PLASTIC', 'Plastic Bottles/Containers'),
+        ('GLASS', 'Glass Bottles/Jars'),
+        ('PAPER', 'Paper/Cardboard'),
+        ('CANS', 'Aluminum/Metal Cans'),
+        ('MIXED', 'Mixed Recyclables'),
+    )
     transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user = models.ForeignKey(User, related_name="transactions", on_delete=models.CASCADE)
     kiosk = models.ForeignKey(Kiosk, on_delete=models.SET_NULL, null=True)
+    material_type = models.CharField(max_length=20, choices=MATERIAL_CHOICES, default='MIXED')
+    material_count = models.PositiveIntegerField(default=1, help_text="Number of items recycled.")
     weight_kg = models.DecimalField(max_digits=6, decimal_places=2)
     points_earned = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.points_earned} pts"
+        return f"{self.user.username} - {self.material_count} x {self.get_material_type_display()} ({self.points_earned} pts)"
 
 
 class RewardRedemption(models.Model):
