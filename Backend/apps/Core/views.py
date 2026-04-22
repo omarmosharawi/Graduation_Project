@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Reward, RecyclingTransaction
-from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer
+from .models import Reward, RecyclingTransaction, Kiosk
+from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer
 from .services import CoreService, GamificationService, DelegateService, DelegateRequest
 from django.core.exceptions import ValidationError
 
@@ -115,3 +115,10 @@ class DelegateRequestListView(generics.ListCreateAPIView):
 
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class KioskMapView(generics.ListAPIView):
+    """Interactive Map to Locate Partner Kiosks."""
+    queryset = Kiosk.objects.filter(is_operational=True)
+    serializer_class = KioskSerializer
+    permission_classes = [IsAuthenticated]
