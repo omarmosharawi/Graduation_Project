@@ -31,7 +31,7 @@ class CustomUserAdmin(admin.ModelAdmin):
     inlines = (ProfileInline,)
 
     # What shows up on the main list table
-    list_display = ('uuid', 'username', 'email', 'phone', 'first_name', 'last_name', 'is_active', 'email_verified')
+    list_display = ('uuid', 'username', 'email', 'phone', 'first_name', 'last_name', 'is_active', 'email_verified', 'phone_verified')
 
     # Filters on the right sidebar
     list_filter = ('is_active', 'is_staff', 'email_verified', 'phone_verified')
