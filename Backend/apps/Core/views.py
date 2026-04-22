@@ -1,16 +1,19 @@
+from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Reward, RecyclingTransaction
 from .serializers import RewardSerializer, TransactionSerializer
-from .services import CoreService
+from .services import CoreService, GamificationService
 from django.core.exceptions import ValidationError
+
 
 class RewardsCatalogView(generics.ListAPIView):
     """Browse catalog of available rewards."""
     queryset = Reward.objects.filter(is_active=True, stock__gt=0)
     serializer_class = RewardSerializer
     permission_classes = [IsAuthenticated]
+
 
 class RedeemRewardView(generics.CreateAPIView):
     """Redeem points for a specific reward."""
@@ -29,6 +32,7 @@ class RedeemRewardView(generics.CreateAPIView):
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class TransactionHistoryView(generics.ListAPIView):
     """View chronological list of recycling transactions."""
     serializer_class = TransactionSerializer
@@ -37,3 +41,50 @@ class TransactionHistoryView(generics.ListAPIView):
     def get_queryset(self):
         # Returns transactions for the logged-in user, newest first
         return RecyclingTransaction.objects.filter(user=self.request.user).order_by('-created_at')
+
+
+class LeaderboardView(APIView):
+    """Handles both Weekly and All-Time leaderboard requests."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        timeframe = request.query_params.get('timeframe', 'all_time')
+
+        if timeframe == 'weekly':
+            leaders = GamificationService.get_weekly_leaderboard()
+            return Response({
+                "timeframe": "weekly",
+                "leaderboard": list(leaders)
+            }, status=200)
+
+        else:
+            leaders = GamificationService.get_all_time_leaderboard()
+            data = [
+                {
+                    "username": profile.user.username,
+                    "total_points": profile.total_points,
+                    "rank": profile.rank
+                } for profile in leaders
+            ]
+            return Response({
+                "timeframe": "all_time",
+                "leaderboard": data
+            }, status=200)
+
+
+class UserBadgesView(APIView):
+    """Returns the list of badges earned by the authenticated user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_badges = request.user.user_badges.select_related('badge').order_by('-earned_at')
+        data = [
+            {
+                "name": ub.badge.name,
+                "description": ub.badge.description,
+                "metric": ub.badge.metric,
+                "icon_url": request.build_absolute_uri(ub.badge.icon.url) if ub.badge.icon else None,
+                "earned_at": ub.earned_at
+            } for ub in user_badges
+        ]
+        return Response({"badges": data}, status=200)

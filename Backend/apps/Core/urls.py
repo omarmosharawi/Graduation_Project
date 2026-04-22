@@ -2,7 +2,9 @@ from django.urls import path
 from .views import (
     RewardsCatalogView,
     RedeemRewardView,
-    TransactionHistoryView
+    TransactionHistoryView,
+    LeaderboardView,
+    UserBadgesView
 )
 
 app_name = 'core'
@@ -14,4 +16,8 @@ urlpatterns = [
 
     # Recycling & Transactions
     path('transactions/', TransactionHistoryView.as_view(), name='transaction-history'),
+
+    # Gamification
+    path('leaderboard/', LeaderboardView.as_view(), name='leaderboard'),
+    path('badges/mine/', UserBadgesView.as_view(), name='my-badges'),
 ]

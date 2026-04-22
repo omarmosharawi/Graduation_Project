@@ -274,7 +274,7 @@ JAZZMIN_SETTINGS = {
 # Baseline UI Tweaks (Dark sidebar, sleek layout)
 JAZZMIN_UI_TWEAKS = {
     "theme": "journal",  # Clean, modern light theme
-    "dark_mode_theme": "darkly",  # Clean, modern dark theme
+    # "dark_mode_theme": "darkly",  # Clean, modern dark theme
     "sidebar": "sidebar-dark-warning",  # Dark sidebar with 'warning' (gold) accents
     "brand_colour": "navbar-dark",
     "accent": "accent-warning",

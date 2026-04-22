@@ -2,7 +2,10 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils.crypto import get_random_string
 from apps.Users.models import Profile
-from .models import RecyclingTransaction, RewardRedemption, Reward, Kiosk
+from django.db.models import Sum
+from django.utils import timezone
+from datetime import timedelta
+from .models import RecyclingTransaction, RewardRedemption, Reward, Kiosk, UserBadge, Badge
 
 
 class CoreService:
@@ -32,6 +35,9 @@ class CoreService:
 
         # 3. Check for Rank Upgrades
         profile.check_and_update_rank()
+
+        # 4. Get badges immediately after recycling
+        GamificationService.check_and_award_badges(user)
 
         return trx
 
@@ -66,3 +72,61 @@ class CoreService:
         )
 
         return redemption
+
+
+class GamificationService:
+
+    @staticmethod
+    def get_all_time_leaderboard(limit=50):
+        """Returns top users ordered by lifetime Total Points."""
+        return Profile.objects.select_related('user').order_by('-total_points')[:limit]
+
+    @staticmethod
+    def get_weekly_leaderboard(limit=50):
+        """Aggregates points earned only within the last 7 days."""
+        one_week_ago = timezone.now() - timedelta(days=7)
+
+        weekly_leaders = RecyclingTransaction.objects.filter(
+            created_at__gte=one_week_ago
+        ).values(
+            'user__username', 'user__profile__rank'
+        ).annotate(
+            weekly_points=Sum('points_earned')
+        ).order_by('-weekly_points')[:limit]
+
+        return weekly_leaders
+
+    @staticmethod
+    def check_and_award_badges(user):
+        """Evaluates user stats and awards missing badges."""
+        profile = user.profile
+
+        # Calculate aggregate stats from transaction history
+        stats = RecyclingTransaction.objects.filter(user=user).aggregate(
+            total_weight=Sum('weight_kg')
+        )
+        total_weight = stats['total_weight'] or 0
+        total_trx = RecyclingTransaction.objects.filter(user=user).count()
+
+        # Fetch badges the user DOES NOT have yet
+        earned_badge_ids = UserBadge.objects.filter(user=user).values_list('badge_id', flat=True)
+        available_badges = Badge.objects.exclude(id__in=earned_badge_ids)
+
+        new_badges = []
+        for badge in available_badges:
+            earned = False
+            if badge.metric == 'points' and profile.total_points >= badge.threshold:
+                earned = True
+            elif badge.metric == 'weight' and total_weight >= badge.threshold:
+                earned = True
+            elif badge.metric == 'transactions' and total_trx >= badge.threshold:
+                earned = True
+
+            if earned:
+                UserBadge.objects.create(user=user, badge=badge)
+                new_badges.append(badge)
+
+                # TODO: Trigger Firebase Cloud Messaging (FCM) here
+                # e.g., send_fcm_push(user, "Achievement Unlocked!", f"You earned the {badge.name} badge.")
+
+        return new_badges
