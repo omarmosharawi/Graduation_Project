@@ -47,7 +47,35 @@ class ProfileInline(admin.StackedInline):
     readonly_fields = ('invite_code', 'reset_password_token', 'reset_password_expire')
 
     # If you don't want admins manually changing points/ranks, uncomment the line below:
-    readonly_fields += ('current_points', 'total_points', 'rank')
+    # readonly_fields += ('current_points', 'total_points', 'rank')
+
+    # Explicitly list ALL fields so nothing is hidden
+    fields = ('rank', 'current_points', 'total_points', 'invite_code', 'referred_by', 'reset_password_token',
+              'reset_password_expire')
+
+    # Creates a search bar for the 'referred_by' field instead of a long dropdown
+    autocomplete_fields = ['referred_by']
+
+
+# Register Profile separately so you can filter specifically by Gamification Ranks
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'rank', 'current_points', 'total_points', 'invite_code')
+    list_filter = ('rank',)
+    search_fields = ('user__username', 'user__email', 'user__phone', 'invite_code')
+    readonly_fields = ('invite_code', 'reset_password_token', 'reset_password_expire')
+    list_editable = ('current_points', 'total_points')
+    ordering = ('-total_points',)
+
+    autocomplete_fields = ['referred_by']
+
+    def referred_by_username(self, obj):
+        if obj.referred_by:
+            return obj.referred_by.user.username
+        return "-"
+
+    referred_by_username.short_description = "Referred By"
+    referred_by_username.admin_order_field = 'referred_by__user__username'
 
 
 @admin.register(User)
@@ -111,18 +139,6 @@ class CustomUserAdmin(admin.ModelAdmin):
 
         formset.save_m2m()
 
-
-# Register Profile separately so you can filter specifically by Gamification Ranks
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'rank', 'current_points', 'total_points', 'invite_code')
-    list_filter = ('rank',)
-    search_fields = ('user__username', 'user__email', 'user__phone', 'invite_code')
-    readonly_fields = ('invite_code', 'reset_password_token', 'reset_password_expire')
-
-    # Add editables so you can adjust points directly from the list view if needed
-    list_editable = ('current_points', 'total_points')
-    ordering = ('-total_points',)
 
 # Optional: Unregister the default Group model if you aren't using Django's built-in permission groups
 admin.site.unregister(Group)

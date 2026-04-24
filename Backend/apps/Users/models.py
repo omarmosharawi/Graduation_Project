@@ -108,6 +108,10 @@ class Profile(models.Model):
         blank=True
     )
 
+    def __str__(self):
+        # This globally changes "Profile Object (x)" to the actual Username!
+        return self.user.username
+
     # Referral System
     invite_code = models.CharField(max_length=8, unique=True, blank=True)
     referred_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='referrals')
