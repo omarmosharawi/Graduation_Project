@@ -163,6 +163,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 | **Mobile Frontend Developer**| Abdelaziz, Ramez  |
 | **Backend Developer** | Omar         |
 | **DevOps Engineer** | Omar         |
-| **Cybersecurity Specialist** | Kirolos, Clara         |
+| **Cybersecurity Specialist** | Kirolos         |
 
 ---
