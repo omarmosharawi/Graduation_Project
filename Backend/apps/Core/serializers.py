@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from .models import Partner, Reward, Kiosk, RecyclingTransaction, DelegateRequest, PartnerCategory
 
@@ -62,6 +63,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'points_earned', 'created_at', 'date_formatted'
         )
 
+    @extend_schema_field(serializers.CharField)
     def get_date_formatted(self, obj):
         return obj.created_at.strftime("%B %d, %Y - %I:%M %p")
 
