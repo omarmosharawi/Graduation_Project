@@ -3,14 +3,17 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
-from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption, PartnerCategory, HomeCard
+from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption, PartnerCategory, HomeCard, DelegateRequest
 from apps.Users.models import User
-from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer, PartnerCategorySerializer, HomeCardSerializer
+from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer, PartnerCategorySerializer, HomeCardSerializer, AcceptJobInputSerializer, CompleteJobInputSerializer
 from .services import CoreService, GamificationService, DelegateService, DelegateRequest
 from django.core.exceptions import ValidationError
 from django.db.models import Sum, Count
+from django.db import transaction
+from django.utils import timezone
 
 
 class RewardsCatalogView(generics.ListAPIView):
@@ -161,6 +164,96 @@ class DelegateRequestListView(generics.ListCreateAPIView):
 
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AvailableJobsView(generics.ListAPIView):
+    """Fetches all PENDING pickup requests for delegates to see."""
+    serializer_class = DelegateRequestSerializer
+    permission_classes = [IsAuthenticated]  # In a real app, you'd check if user is a Delegate
+
+    def get_queryset(self):
+        return DelegateRequest.objects.filter(status='PENDING').order_by('scheduled_date')
+
+
+class AcceptJobView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Delegate: Accept a Pickup Job",
+        request=AcceptJobInputSerializer,
+        responses={200: OpenApiResponse(description="Delegation accepted successfully.")}
+    )
+    def post(self, request):
+        serializer = AcceptJobInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        req_id = serializer.validated_data['request_id']
+
+        try:
+            job = DelegateRequest.objects.get(id=req_id, status='PENDING')
+            job.status = 'ACCEPTED'
+            # Assuming you have a 'delegate' field, you would link it here:
+            job.delegate = request.user
+            job.save()
+            return Response({"message": "Delegation accepted successfully!"}, status=status.HTTP_200_OK)
+        except DelegateRequest.DoesNotExist:
+            return Response({"error": "Delegation not found or already taken."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CompleteJobView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)  # Allows uploading the proof image
+
+    @extend_schema(
+        summary="Delegate: Complete Job & Award Points",
+        description="Records the actual weight, creates a transaction, and awards points to the user.",
+        request=CompleteJobInputSerializer,
+        responses={200: OpenApiResponse(description="Points awarded successfully.")}
+    )
+    def post(self, request):
+        serializer = CompleteJobInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+
+        try:
+            job = DelegateRequest.objects.get(id=data['request_id'], status='ACCEPTED')
+
+            # Using atomic transaction to ensure points and records are created together safely
+            with transaction.atomic():
+                # 1. Update the Job Status
+                job.status = 'COMPLETED'
+                job.actual_weight_kg = data['actual_weight_kg']
+                if 'proof_image' in data:
+                    job.proof_image = data['proof_image']
+                job.save()
+
+                # 2. Calculate Points (Business Logic: 10 points per KG)
+                points_to_award = int(float(data['actual_weight_kg']) * 10)
+
+                # 3. Create the Recycling Transaction history
+                RecyclingTransaction.objects.create(
+                    user=job.user,
+                    kiosk=None,  # It's a home pickup, not a kiosk drop-off
+                    material_type=data['material_type'],
+                    material_count=1,  # Bulk bag
+                    weight_kg=data['actual_weight_kg'],
+                    points_earned=points_to_award
+                )
+
+                # 4. Give the user their points!
+                profile = job.user.profile
+                profile.current_points += points_to_award
+                profile.total_points += points_to_award
+                profile.save()
+
+            return Response({
+                "message": "Delegation completed! Points have been deposited to the user.",
+                "points_awarded": points_to_award
+            }, status=status.HTTP_200_OK)
+
+        except DelegateRequest.DoesNotExist:
+            return Response({"error": "Delegation not found or not in ACCEPTED state."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class KioskMapView(generics.ListAPIView):

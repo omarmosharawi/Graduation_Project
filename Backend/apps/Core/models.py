@@ -189,6 +189,10 @@ class DelegateRequest(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    actual_weight_kg = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True,
+                                           help_text="Filled by driver.")
+    proof_image = models.ImageField(upload_to="delegate_proofs/", null=True, blank=True, help_text="Filled by driver.")
+
     def __str__(self):
         return f"Pickup for {self.user.username} on {self.scheduled_date} ({self.material_count}x {self.get_material_type_display()})"
 

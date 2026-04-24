@@ -80,6 +80,18 @@ class DelegateRequestSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'status', 'estimated_arrival_time', 'cost_in_points', 'created_at')
 
 
+# Serializer for a Delegate accepting a job
+class AcceptJobInputSerializer(serializers.Serializer):
+    request_id = serializers.IntegerField(help_text="The ID of the DelegateRequest to accept.")
+
+# Serializer for a Delegate finishing a job and awarding points
+class CompleteJobInputSerializer(serializers.Serializer):
+    request_id = serializers.IntegerField()
+    actual_weight_kg = serializers.DecimalField(max_digits=6, decimal_places=2, help_text="Exact weight measured by the delegate.")
+    material_type = serializers.ChoiceField(choices=['PLASTIC', 'GLASS', 'METAL', 'PAPER', 'MIXED'])
+    proof_image = serializers.ImageField(required=False, help_text="Optional photo of the collected materials.")
+
+
 class HomeCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = HomeCard

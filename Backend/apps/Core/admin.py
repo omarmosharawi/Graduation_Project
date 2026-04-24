@@ -231,16 +231,16 @@ class CustomNotificationAdmin(admin.ModelAdmin):
 @admin.register(DelegateRequest)
 class DelegateRequestAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'scheduled_date', 'scheduled_time', 'material_type', 'material_count', 'status',
-                    'cost_in_points')
+                    'cost_in_points', 'actual_weight_kg', 'display_proof')
     list_filter = ('status', 'scheduled_date', 'material_type')
-    search_fields = ('user__username', 'pickup_address', 'user__email')
+    search_fields = ('user__username', 'pickup_address', 'user__email', 'user__phone')
     list_editable = ('status',)
-    readonly_fields = ('cost_in_points', 'created_at', 'user')
+    readonly_fields = ('cost_in_points', 'created_at', 'user', 'display_proof')
     actions = ['mark_as_assigned', 'mark_as_completed', 'mark_as_cancelled']
 
     fieldsets = (
         ('Request Info', {
-            'fields': ('user', 'cost_in_points', 'created_at')
+            'fields': ('user', 'cost_in_points')
         }),
         ('Pickup Details', {
             'fields': ('pickup_address', 'latitude', 'longitude', 'scheduled_date', 'scheduled_time',
@@ -252,7 +252,29 @@ class DelegateRequestAdmin(admin.ModelAdmin):
         ('Status', {
             'fields': ('status',)
         }),
+        ('Driver Completion Data', {
+            'fields': ('actual_weight_kg', 'proof_image', 'display_proof'),
+            'description': "Data submitted automatically by the driver via the Delegate App."
+        }),
+        ('System Logs', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)  # Hides this section by default to keep the UI clean
+        }),
     )
+
+    # Beautiful, clickable image preview for the operations team
+    def display_proof(self, obj):
+        if obj.proof_image:
+            # Renders a small thumbnail that admins can click to open the full-resolution image
+            return format_html(
+                '<a href="{}" target="_blank">'
+                '<img src="{}" width="80" height="80" style="border-radius: 6px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />'
+                '</a>',
+                obj.proof_image.url, obj.proof_image.url
+            )
+        return format_html('<span style="color: gray;"><i>No proof uploaded</i></span>')
+
+    display_proof.short_description = "Proof of Pickup"
 
     @admin.action(description='Mark selected requests as ASSIGNED')
     def mark_as_assigned(self, request, queryset):

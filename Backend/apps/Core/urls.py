@@ -9,7 +9,10 @@ from .views import (
     KioskMapView,
     CommunityImpactView,
     CategoryListView,
-    HomeCardListView
+    HomeCardListView,
+    AvailableJobsView,
+    AcceptJobView,
+    CompleteJobView
 )
 
 app_name = 'core'
@@ -29,10 +32,16 @@ urlpatterns = [
 
     # Delegate Service
     path('delegate-requests/', DelegateRequestListView.as_view(), name='delegate-requests'),
+    path('delegates/jobs/available/', AvailableJobsView.as_view(), name='available-jobs'),
+    path('delegates/jobs/accept/', AcceptJobView.as_view(), name='accept-job'),
+    path('delegates/jobs/complete/', CompleteJobView.as_view(), name='complete-job'),
 
+    # Kiosk
     path('kiosks/map/', KioskMapView.as_view(), name='kiosk-map'),
 
+    # Home Cards
     path('home-cards/', HomeCardListView.as_view(), name='home-cards'),
 
+    # Community Hub
     path('community/impact/', CommunityImpactView.as_view(), name='community-impact'),
 ]
