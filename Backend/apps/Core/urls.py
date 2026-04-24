@@ -8,7 +8,8 @@ from .views import (
     DelegateRequestListView,
     KioskMapView,
     CommunityImpactView,
-    CategoryListView
+    CategoryListView,
+    HomeCardListView
 )
 
 app_name = 'core'
@@ -30,6 +31,8 @@ urlpatterns = [
     path('delegate-requests/', DelegateRequestListView.as_view(), name='delegate-requests'),
 
     path('kiosks/map/', KioskMapView.as_view(), name='kiosk-map'),
+
+    path('home-cards/', HomeCardListView.as_view(), name='home-cards'),
 
     path('community/impact/', CommunityImpactView.as_view(), name='community-impact'),
 ]

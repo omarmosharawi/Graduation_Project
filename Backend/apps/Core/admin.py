@@ -7,7 +7,7 @@ from .models import (
     Partner, Reward, Kiosk, RecyclingTransaction,
     RewardRedemption, Badge, UserBadge,
     CustomNotification, DelegateRequest, CommunityImpact,
-    PartnerCategory
+    PartnerCategory, HomeCard
 )
 from .Tasks.notification_tasks import process_custom_notification
 
@@ -268,6 +268,36 @@ class DelegateRequestAdmin(admin.ModelAdmin):
         # Note: If cancelled, you might want logic to refund points to the user.
         updated = queryset.update(status='CANCELLED')
         self.message_user(request, f"{updated} requests marked as Cancelled.", messages.WARNING)
+
+# ==========================================
+# Home Card
+# ==========================================
+
+@admin.register(HomeCard)
+class HomeCardAdmin(admin.ModelAdmin):
+    list_display = ('title', 'card_type', 'priority', 'is_active', 'display_image')
+    list_filter = ('card_type', 'is_active')
+    search_fields = ('title', 'description', 'coupon_code')
+    list_editable = ('priority', 'is_active')  # Allows quick sorting directly from the list table
+
+    fieldsets = (
+        ('Card Content', {
+            'fields': ('title', 'description', 'image', 'card_type')
+        }),
+        ('Interactions & Actions', {
+            'fields': ('reference_url', 'coupon_code')
+        }),
+        ('Display Rules', {
+            'fields': ('priority', 'is_active')
+        }),
+    )
+
+    def display_image(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" height="50" style="border-radius: 6px;" />', obj.image.url)
+        return "-"
+
+    display_image.short_description = 'Banner Preview'
 
 
 # ==========================================

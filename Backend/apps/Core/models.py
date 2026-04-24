@@ -6,6 +6,7 @@ User = get_user_model()
 
 
 class PartnerCategory(models.Model):
+    """Partner businesses categories."""
     name = models.CharField(max_length=100, unique=True, help_text="e.g., Coffee, Healthcare, Beauty")
     icon = models.ImageField(upload_to="categories/icons/", blank=True, null=True, help_text="Small icon for the mobile app UI.")
 
@@ -187,6 +188,36 @@ class DelegateRequest(models.Model):
 
     def __str__(self):
         return f"Pickup for {self.user.username} on {self.scheduled_date} ({self.material_count}x {self.get_material_type_display()})"
+
+
+class HomeCard(models.Model):
+    CARD_TYPES = (
+        ('ANNOUNCEMENT', 'Announcement'),
+        ('DEAL', 'Hot Deal'),
+        ('OFFER', 'New Offer'),
+    )
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    image = models.ImageField(upload_to="home_cards/", help_text="High-quality image for the mobile banner.")
+
+    # Actions
+    reference_url = models.URLField(blank=True, null=True, help_text="External link or deep link to an offer.")
+    coupon_code = models.CharField(max_length=50, blank=True, null=True,
+                                   help_text="Code users can copy for bonus points.")
+
+    # Display Rules
+    card_type = models.CharField(max_length=20, choices=CARD_TYPES, default='ANNOUNCEMENT')
+    priority = models.PositiveIntegerField(default=1,
+                                           help_text="Lower number = shows up first (e.g., 1 is top priority).")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['priority', '-created_at']  # Automatically sorts by priority first
+
+    def __str__(self):
+        return f"{self.get_card_type_display()} - {self.title}"
 
 
 # A "Dummy" Model purely to attach our Admin Dashboard to

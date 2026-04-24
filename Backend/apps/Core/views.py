@@ -2,11 +2,12 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
-from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption, PartnerCategory
+from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption, PartnerCategory, HomeCard
 from apps.Users.models import User
-from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer, PartnerCategorySerializer
+from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer, PartnerCategorySerializer, HomeCardSerializer
 from .services import CoreService, GamificationService, DelegateService, DelegateRequest
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
@@ -167,6 +168,30 @@ class KioskMapView(generics.ListAPIView):
     queryset = Kiosk.objects.filter(status='online')
     serializer_class = KioskSerializer
     permission_classes = [IsAuthenticated]
+
+
+class HomeCardPagination(PageNumberPagination):
+    page_size = 3
+    page_size_query_param = 'page_size'
+    max_page_size = 10
+
+
+class HomeCardListView(generics.ListAPIView):
+    """Fetches active home cards (Announcements, Deals, Offers) with pagination."""
+    serializer_class = HomeCardSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = HomeCardPagination  # Applies the 3-item limit
+
+    def get_queryset(self):
+        # Only return active cards, already ordered by priority in the Model Meta
+        return HomeCard.objects.filter(is_active=True)
+
+    @extend_schema(
+        summary="Get Home UI Cards (Announcements, Deals, Offers)",
+        description="Returns paginated cards for the mobile home screen. 3 items per page. Sorted by Priority."
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 
 class CommunityImpactView(APIView):

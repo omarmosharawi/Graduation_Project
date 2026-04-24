@@ -1,6 +1,6 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from .models import Partner, Reward, Kiosk, RecyclingTransaction, DelegateRequest, PartnerCategory
+from .models import Partner, Reward, Kiosk, RecyclingTransaction, DelegateRequest, PartnerCategory, HomeCard
 
 
 class PartnerCategorySerializer(serializers.ModelSerializer):
@@ -78,3 +78,13 @@ class DelegateRequestSerializer(serializers.ModelSerializer):
             'estimated_arrival_time', 'cost_in_points', 'created_at'
         )
         read_only_fields = ('id', 'status', 'estimated_arrival_time', 'cost_in_points', 'created_at')
+
+
+class HomeCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomeCard
+        fields = (
+            'id', 'title', 'description', 'image',
+            'reference_url', 'coupon_code', 'card_type',
+            'priority', 'is_active', 'created_at'
+        )
