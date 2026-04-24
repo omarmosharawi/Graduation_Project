@@ -39,7 +39,7 @@ class Kiosk(models.Model):
     )
 
     name = models.CharField(max_length=255, unique=True, help_text="Specific unique name or ID of the Kiosk.")
-    address = models.CharField(max_length=255, help_text="Full address")
+    address = models.CharField(max_length=255, default='Unknown', help_text="Full address")
 
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
