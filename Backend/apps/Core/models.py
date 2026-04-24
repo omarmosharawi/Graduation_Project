@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 import uuid
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .Tasks.notification_tasks import process_custom_notification
 
 User = get_user_model()
 
@@ -218,6 +221,37 @@ class HomeCard(models.Model):
 
     def __str__(self):
         return f"{self.get_card_type_display()} - {self.title}"
+
+
+@receiver(post_save, sender=HomeCard)
+def trigger_home_card_notification(sender, instance, created, **kwargs):
+    """
+    Listens for new HomeCards. If a new, active card is published,
+    it automatically blasts a Firebase push notification to ALL users.
+    """
+    # We only want to trigger this ONCE when the card is explicitly created and active
+    if created and instance.is_active:
+        # Format a catchy notification title and body
+        notif_title = f"📢 New {instance.get_card_type_display()} Available!"
+        notif_body = f"{instance.title} - Tap to see details!"
+
+        # Create a log in the CustomNotification table so admins have a record of it
+        notification = CustomNotification.objects.create(
+            title=notif_title,
+            body=notif_body,
+            target='ALL',
+            is_sent=True  # We set this to True because we are firing the task right now
+        )
+
+        # Fire the async Celery task to actually send the Firebase messages
+        # This happens in the background so the admin panel doesn't freeze!
+        process_custom_notification.delay(
+            notification_id=notification.id,
+            title=notif_title,
+            body=notif_body,
+            target='ALL',
+            user_ids=[]  # Empty list because target is 'ALL'
+        )
 
 
 # A "Dummy" Model purely to attach our Admin Dashboard to
