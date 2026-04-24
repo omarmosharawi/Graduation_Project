@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import serializers
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, inline_serializer
 from django.shortcuts import redirect
 from django.utils import timezone
 from .models import User, Profile
@@ -151,28 +151,65 @@ class LoginView(TokenObtainPairView):
 #         return Response(Response_data, Response_status)
 
 
+class UserInfoResponseSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    username = serializers.CharField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    phone = serializers.CharField(allow_null=True, required=False)
+    rank = serializers.CharField()
+    current_points = serializers.IntegerField()
+    total_points = serializers.IntegerField()
+
 class UserInfo(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
+    @extend_schema(
+        summary="Get Current User Profile & Info",
+        responses={200: UserInfoResponseSerializer}
+    )
     def get(self, request):
         Response_data = selectors.get_user_info(request)
         return Response(
             {"status": "success", "data": Response_data}, status=HTTP_200_OK
         )
 
+    @extend_schema(
+        summary="Update Current User Profile & Info",
+        responses={200: UserInfoResponseSerializer}
+    )
     def put(self, request):
         Response_data = services.update_user_info(request)
         return Response(Response_data, HTTP_200_OK)
 
 
+
+class ForgetPasswordInputSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
 class ForgetPasswordView(APIView):
+    @extend_schema(
+        summary="Request Password Reset Email",
+        request=ForgetPasswordInputSerializer,
+        responses={200: OpenApiResponse(description="Reset email sent.")}
+    )
     def post(self, request):
         Response_data, Response_status = password_tasks.forget_password(request)
         return Response(Response_data, status=Response_status)
 
 
+class ResetPasswordInputSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    new_password = serializers.CharField()
+
 class ResetPasswordView(APIView):
+    @extend_schema(
+        summary="Reset Password with Token",
+        request=ResetPasswordInputSerializer,
+        responses={200: OpenApiResponse(description="Password successfully reset.")}
+    )
     def post(self, request, token):
         Response_data, Response_status = password_tasks.reset_password(request, token)
         return Response(Response_data, status=Response_status)
@@ -184,6 +221,7 @@ class PublicApi(APIView):
 
 
 class GoogleLoginRedirectView(PublicApi):
+    @extend_schema(exclude=True)
     def get(self, request, *args, **kwargs):
         google_login_flow = google_auth_tasks.GoogleRawLoginFlowService()
 
@@ -196,6 +234,7 @@ class GoogleLoginRedirectView(PublicApi):
 
 
 class GoogleLoginCallbackView(PublicApi):
+    @extend_schema(exclude=True)
     def get(self, request, *args, **kwargs):
         Response_data, Response_status = google_auth_tasks.google_login(request)
         return Response(Response_data, status=Response_status)
@@ -209,10 +248,19 @@ class APILogoutView(APIView):
         return Response(response_data, status=HTTP_200_OK)
 
 
+
+class FCMTokenInputSerializer(serializers.Serializer):
+    fcm_token = serializers.CharField()
+
 class UpdateFCMTokenView(APIView):
     """Allows the mobile app to register the device for push notifications."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Update Firebase Cloud Messaging Token for Push Notifications",
+        request=FCMTokenInputSerializer,
+        responses={200: OpenApiResponse(description="Token updated.")}
+    )
     def post(self, request):
         token = request.data.get('fcm_token')
         if not token:
@@ -228,7 +276,6 @@ class UpdateFCMTokenView(APIView):
 # Create a quick inline serializer just for the Swagger documentation
 class ReferralCodeInputSerializer(serializers.Serializer):
     invite_code = serializers.CharField(required=True)
-
 
 class ApplyReferralCodeView(APIView):
     """System where users invite friends for bonus points."""
@@ -325,7 +372,7 @@ class FirebaseGoogleAuthView(generics.GenericAPIView):
 
                 # If you have a signal that creates the Profile automatically, great.
                 # If not, ensure the Profile is created here:
-                # Profile.objects.get_or_create(user=user)
+                Profile.objects.get_or_create(user=user)
 
                 message = "Registration successful via Google."
                 status_code = status.HTTP_201_CREATED

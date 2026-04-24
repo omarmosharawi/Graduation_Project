@@ -2,6 +2,8 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import serializers
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption, PartnerCategory
 from apps.Users.models import User
 from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer, PartnerCategorySerializer
@@ -17,10 +19,18 @@ class RewardsCatalogView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
 
+class RedeemRewardInputSerializer(serializers.Serializer):
+    reward_id = serializers.IntegerField()
+
 class RedeemRewardView(generics.CreateAPIView):
     """Redeem points for a specific reward."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Redeem a Reward using Points",
+        request=RedeemRewardInputSerializer,
+        responses={200: OpenApiResponse(description="Reward claimed successfully.")}
+    )
     def post(self, request, reward_id):
         try:
             redemption = CoreService.redeem_reward(user=request.user, reward_id=reward_id)
@@ -74,6 +84,10 @@ class LeaderboardView(APIView):
     """Handles both Weekly and All-Time leaderboard requests."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get Top 10 Recyclers Leaderboard",
+        responses={200: OpenApiResponse(description="List of top users ordered by points.")}
+    )
     def get(self, request):
         timeframe = request.query_params.get('timeframe', 'all_time')
 
@@ -103,6 +117,10 @@ class UserBadgesView(APIView):
     """Returns the list of badges earned by the authenticated user."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get Current User's Earned Badges",
+        responses={200: OpenApiResponse(description="List of unlocked badges.")}
+    )
     def get(self, request):
         user_badges = request.user.user_badges.select_related('badge').order_by('-earned_at')
         data = [
@@ -155,6 +173,18 @@ class CommunityImpactView(APIView):
     """Dashboard showing the community's collective impact."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get Global Community Impact Stats",
+        responses={200: inline_serializer(
+            name='CommunityImpactResponse',
+            fields={
+                'total_weight_recycled_kg': serializers.FloatField(),
+                'estimated_co2_saved_kg': serializers.FloatField(),
+                'total_active_recyclers': serializers.IntegerField(),
+                'total_rewards_claimed': serializers.IntegerField(),
+            }
+        )}
+    )
     def get(self, request):
         total_weight_stats = RecyclingTransaction.objects.aggregate(total_kg=Sum('weight_kg'))
         total_kg = total_weight_stats['total_kg'] or 0
