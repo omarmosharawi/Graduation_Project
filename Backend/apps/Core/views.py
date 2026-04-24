@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption
+from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption, PartnerCategory
 from apps.Users.models import User
-from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer
+from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer, PartnerCategorySerializer
 from .services import CoreService, GamificationService, DelegateService, DelegateRequest
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
@@ -33,6 +33,31 @@ class RedeemRewardView(generics.CreateAPIView):
             return Response({"error": "Reward not found."}, status=status.HTTP_404_NOT_FOUND)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RewardListView(generics.ListAPIView):
+    """Fetches all active rewards, with an optional category filter."""
+    serializer_class = RewardSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Start with all active rewards that are in stock
+        queryset = Reward.objects.filter(is_active=True, stock__gt=0).order_by('-id')
+
+        # Check if the mobile app passed a category filter in the URL
+        category_name = self.request.query_params.get('category', None)
+        if category_name:
+            # Filter rewards where the Partner's category matches the requested name
+            queryset = queryset.filter(partner__category__name__iexact=category_name)
+
+        return queryset
+
+
+class CategoryListView(generics.ListAPIView):
+    """Fetches all partner categories to build the mobile app filter UI."""
+    queryset = PartnerCategory.objects.all().order_by('name')
+    serializer_class = PartnerCategorySerializer
+    permission_classes = [IsAuthenticated]
 
 
 class TransactionHistoryView(generics.ListAPIView):

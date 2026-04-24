@@ -1,13 +1,22 @@
 from rest_framework import serializers
-from .models import Partner, Reward, Kiosk, RecyclingTransaction, DelegateRequest
+from .models import Partner, Reward, Kiosk, RecyclingTransaction, DelegateRequest, PartnerCategory
+
+
+class PartnerCategorySerializer(serializers.ModelSerializer):
+    """Provides partner category for the frontend UI."""
+
+    class Meta:
+        model = PartnerCategory
+        fields = ('id', 'name', 'icon')
 
 
 class PartnerSerializer(serializers.ModelSerializer):
     """Provides essential partner details for the frontend UI."""
+    category = PartnerCategorySerializer(read_only=True)
 
     class Meta:
         model = Partner
-        fields = ('id', 'name', 'logo')
+        fields = ('id', 'name', 'category', 'description', 'logo', 'is_active')
 
 
 class RewardSerializer(serializers.ModelSerializer):

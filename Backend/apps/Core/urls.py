@@ -8,12 +8,14 @@ from .views import (
     DelegateRequestListView,
     KioskMapView,
     CommunityImpactView,
+    CategoryListView
 )
 
 app_name = 'core'
 
 urlpatterns = [
     # Rewards & Redemption
+    path('categories/', CategoryListView.as_view(), name='category-list'),
     path('rewards/', RewardsCatalogView.as_view(), name='rewards-catalog'),
     path('rewards/<int:reward_id>/redeem/', RedeemRewardView.as_view(), name='redeem-reward'),
 

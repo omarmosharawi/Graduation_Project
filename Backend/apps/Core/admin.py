@@ -6,7 +6,8 @@ from apps.Users.models import User
 from .models import (
     Partner, Reward, Kiosk, RecyclingTransaction,
     RewardRedemption, Badge, UserBadge,
-    CustomNotification, DelegateRequest, CommunityImpact
+    CustomNotification, DelegateRequest, CommunityImpact,
+    PartnerCategory
 )
 from .Tasks.notification_tasks import process_custom_notification
 
@@ -22,18 +23,30 @@ class RewardInline(admin.TabularInline):
     fields = ('title', 'description', 'points_required', 'stock', 'is_active')
 
 
+@admin.register(PartnerCategory)
+class PartnerCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'display_icon')
+    search_fields = ('name',)
+
+    def display_icon(self, obj):
+        if obj.icon:
+            return format_html('<img src="{}" width="30" height="30" style="border-radius: 4px;" />', obj.icon.url)
+        return "-"
+    display_icon.short_description = 'Icon'
+
+
 @admin.register(Partner)
 class PartnerAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'display_logo', 'is_active')
+    list_display = ('id', 'name', 'category', 'display_logo', 'is_active')
     search_fields = ('name', 'description')
-    list_filter = ('is_active',)
+    list_filter = ('category', 'is_active')
     list_editable = ('is_active',)
     ordering = ('id',)
     inlines = [RewardInline]
 
     fieldsets = (
         ('Partner Details', {
-            'fields': ('name', 'description', 'logo', 'is_active')
+            'fields': ('name', 'category', 'description', 'logo', 'is_active')
         }),
     )
 

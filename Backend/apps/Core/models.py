@@ -5,12 +5,25 @@ import uuid
 User = get_user_model()
 
 
+class PartnerCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True, help_text="e.g., Coffee, Healthcare, Beauty")
+    icon = models.ImageField(upload_to="categories/icons/", blank=True, null=True, help_text="Small icon for the mobile app UI.")
+
+    class Meta:
+        verbose_name_plural = "Partner Categories"
+
+    def __str__(self):
+        return self.name
+
+
 class Partner(models.Model):
     """Partner businesses offering discounts."""
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to="partners/logos/", blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    category = models.ForeignKey(PartnerCategory, on_delete=models.SET_NULL, null=True, related_name='partners',
+                                 help_text="Industry or type of partner.")
 
     def __str__(self):
         return self.name
