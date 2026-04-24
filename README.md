@@ -47,14 +47,16 @@ Source: [The RE - User Stories](https://trello.com/1/cards/68ec1cb4bbcf8f4108543
 | Category                   | Technology / Tool                                         |
 | -------------------------- | --------------------------------------------------------- |
 | **Project Management** | GitHub, Trello, Google Meet                               |
-| **Product Design (UI/UX)** | Figma                                                     |
-| **Frontend (Mobile)** | Native Android (Kotlin/Java)                              |
+| **Product Design (UI/UX)** | Figma, Canva                                                     |
+| **Frontend (Mobile)** | Flutter (Dart)                            |
 | **Frontend (Web)** | Next.js (React Framework)                                 |
 | **Backend** | Django (DRF), Celery                                      |
 | **Database & Caching** | PostgreSQL, Redis                                         |
-| **Services & Notifications**| Firebase Cloud Messaging (FCM)                            |
+| **Services & Notifications**| Firebase Authentication, Firebase Cloud Messaging (FCM)                            |
 | **Infrastructure & Deployment** | Hostinger, Nginx, Docker, GitHub Actions (CI/CD)          |
-| **API Testing & Security** | Postman, Web/Mobile Endpoint Security Best Practices      |
+| **Monitoring Performance** | Prometheus, Grafana          |
+| **API Testing & Security** | Postman, Swagger, Web/Mobile Endpoint Security Best Practices      |
+| **Hardware** | ESP32-S, ESP32-CAM, Inductive (metal), IR (plastic), OLED 1.14" RGB, MG995 Servo      |
 
 Source: [The RE - Unified Project Plan](https://trello.com/1/cards/68ec1b92ffb2f8e20c144889/attachments/68ec1bf19315f19435dae38e/download/The_ReWard_-_Unified_Project_Plan.pdf)
 
@@ -65,8 +67,9 @@ Source: [The RE - Unified Project Plan](https://trello.com/1/cards/68ec1b92ffb2f
   * Python 3.11
   * Docker and Docker Compose
   * Pipenv
+  * Flutter SDK 3.x
 
-### Installation
+### Backend Installation
 
 1.  **Clone the repository:**
 
@@ -82,7 +85,7 @@ Source: [The RE - Unified Project Plan](https://trello.com/1/cards/68ec1b92ffb2f
     pipenv shell
     ```
 
-3.  **Create a `.env` file** in the `backend` directory and add the necessary environment variables.
+3.  **Create a `.env` file** in the `Backend` directory and add the necessary environment variables.
 
 4.  **Run the development server using Docker:**
 
@@ -95,7 +98,7 @@ Source: [The RE - Unified Project Plan](https://trello.com/1/cards/68ec1b92ffb2f
 ## 📂 Project Structure
 
 ```
-backend/
+Backend/
 ├── apps/
 │   ├── Users/        # Main application for user management and core logic
 │   └── ...
@@ -107,6 +110,24 @@ backend/
 ├── manage.py
 ├── requirements.txt
 └── ...
+```
+```
+EcoSystem/
+├── Mobile App/          # Flutter mobile application
+│   ├── lib/
+│   │   ├── app/         # Theme, routes, constants
+│   │   ├── core/        # Services, widgets, utilities
+│   │   └── features/    # Feature-based modules
+│   └── ...
+│
+├── API/                 # REST API
+│   ├── endpoints/       # API endpoint handlers
+│   ├── config.php       # Configuration (credentials)
+│   ├── firebase.php     # FCM & Firestore helpers
+│   ├── index.php        # Main router
+│   └── ...
+│
+└── 
 ```
 
 ## 📚 API Documentation
@@ -136,12 +157,12 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 | Role                         | Member(s)    |
 | ---------------------------- |--------------|
 | **Product Manager & Team Leader** | Omar         |
-| **Documentation & Architecture & Presentation** | Asma, Sheri  |
-| **Product Designer (UI/UX)** | Clara, Sheri |
-| **Web Frontend Developer** | Omar, Kiro   |
-| **Mobile Frontend Developer**| Aziz, Ramez  |
+| **Documentation & Architecture & Presentation** | Asmaa, Sherin  |
+| **Product Designer (UI/UX)** | Clara, Sherin |
+| **Web Frontend Developer** | Omar, Kirolos   |
+| **Mobile Frontend Developer**| Abdelaziz, Ramez  |
 | **Backend Developer** | Omar         |
 | **DevOps Engineer** | Omar         |
-| **Cybersecurity Specialist** | Kiro, Clara         |
+| **Cybersecurity Specialist** | Kirolos, Clara         |
 
 ---
