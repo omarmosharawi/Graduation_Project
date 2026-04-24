@@ -7,6 +7,8 @@ from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import serializers
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from django.shortcuts import redirect
 from django.utils import timezone
 from .models import User, Profile
@@ -223,10 +225,20 @@ class UpdateFCMTokenView(APIView):
         return Response({"status": "Device registered for notifications"}, status=HTTP_200_OK)
 
 
+# Create a quick inline serializer just for the Swagger documentation
+class ReferralCodeInputSerializer(serializers.Serializer):
+    invite_code = serializers.CharField(required=True)
+
+
 class ApplyReferralCodeView(APIView):
     """System where users invite friends for bonus points."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Apply a friend's referral code",
+        request=ReferralCodeInputSerializer,
+        responses={200: OpenApiResponse(description="Bonus points added.")}
+    )
     def post(self, request):
         invite_code = request.data.get('invite_code')
         profile = request.user.profile
