@@ -93,6 +93,24 @@ class CustomUserAdmin(admin.ModelAdmin):
 
     login_method.short_description = "Auth Method"
 
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for instance in instances:
+            # If the inline being saved is the Profile...
+            if isinstance(instance, Profile):
+                try:
+                    # Check if the background signal already created it
+                    existing_profile = Profile.objects.get(user=form.instance)
+                    # The Magic Trick: Give the inline form the existing database ID.
+                    # This forces Django to UPDATE the row instead of creating a duplicate!
+                    instance.id = existing_profile.id
+                except Profile.DoesNotExist:
+                    pass
+
+            instance.save()
+
+        formset.save_m2m()
+
 
 # Register Profile separately so you can filter specifically by Gamification Ranks
 @admin.register(Profile)
