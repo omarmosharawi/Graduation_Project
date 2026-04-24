@@ -10,7 +10,7 @@ from apps.Users.models import User
 from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer, PartnerCategorySerializer, HomeCardSerializer
 from .services import CoreService, GamificationService, DelegateService, DelegateRequest
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
+from django.db.models import Sum, Count
 
 
 class RewardsCatalogView(generics.ListAPIView):
@@ -199,30 +199,59 @@ class CommunityImpactView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Get Global Community Impact Stats",
+        summary="Get Extended Global Community Impact Stats",
         responses={200: inline_serializer(
-            name='CommunityImpactResponse',
+            name='ExtendedCommunityImpactResponse',
             fields={
-                'total_weight_recycled_kg': serializers.FloatField(),
-                'estimated_co2_saved_kg': serializers.FloatField(),
-                'total_active_recyclers': serializers.IntegerField(),
-                'total_rewards_claimed': serializers.IntegerField(),
+                'global_stats': inline_serializer('GlobalStats', fields={
+                    'total_weight_recycled_kg': serializers.FloatField(),
+                    'estimated_co2_saved_kg': serializers.FloatField(),
+                    'total_active_recyclers': serializers.IntegerField(),
+                    'total_rewards_claimed': serializers.IntegerField(),
+                    'total_delegate_pickups': serializers.IntegerField(),
+                }),
+                'material_breakdown': serializers.ListField(
+                    child=serializers.DictField(),
+                    help_text="Weight breakdown by material type (e.g., Plastic, Metal)."
+                ),
+                'top_kiosks': serializers.ListField(
+                    child=serializers.DictField(),
+                    help_text="The top 3 most active kiosks in the community."
+                )
             }
         )}
     )
     def get(self, request):
+        # 1. Base Global Stats
         total_weight_stats = RecyclingTransaction.objects.aggregate(total_kg=Sum('weight_kg'))
         total_kg = total_weight_stats['total_kg'] or 0
-
         # Environmental conversion (Example: 1 KG of plastic saves ~1.5 KG of CO2)
         co2_saved = float(total_kg) * 1.5
 
         total_users = User.objects.count()
         total_redemptions = RewardRedemption.objects.count()
+        total_pickups = DelegateRequest.objects.filter(status='COMPLETED').count()
+
+        # 2. Material Breakdown (Groups by material_type and sums the weight)
+        materials = RecyclingTransaction.objects.values('material_type').annotate(
+            total_weight=Sum('weight_kg')
+        ).order_by('-total_weight')
+
+        # 3. Top Community Kiosks (Gets the 3 kiosks with the most kg recycled)
+        top_kiosks = RecyclingTransaction.objects.filter(kiosk__isnull=False).values(
+            'kiosk__name', 'kiosk__address'
+        ).annotate(
+            total_contributed=Sum('weight_kg')
+        ).order_by('-total_contributed')[:3]
 
         return Response({
-            "total_weight_recycled_kg": total_kg,
-            "estimated_co2_saved_kg": co2_saved,
-            "total_active_recyclers": total_users,
-            "total_rewards_claimed": total_redemptions
+            "global_stats": {
+                "total_weight_recycled_kg": float(total_kg),
+                "estimated_co2_saved_kg": float(co2_saved),
+                "total_active_recyclers": total_users,
+                "total_rewards_claimed": total_redemptions,
+                "total_delegate_pickups": total_pickups
+            },
+            "material_breakdown": list(materials),
+            "top_kiosks": list(top_kiosks)
         }, status=status.HTTP_200_OK)

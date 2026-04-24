@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib import messages
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.db.models import Sum
 from apps.Users.models import User
 from .models import (
@@ -308,7 +309,7 @@ class HomeCardAdmin(admin.ModelAdmin):
 class CommunityImpactAdmin(admin.ModelAdmin):
     """
     A custom admin dashboard using a proxy model. It calculates the live platform
-    stats and displays them at the top of the page.
+    stats and displays them using a clean HTML layout.
     """
 
     def has_add_permission(self, request):
@@ -325,24 +326,66 @@ class CommunityImpactAdmin(admin.ModelAdmin):
         return super().get_queryset(request).none()
 
     def changelist_view(self, request, extra_context=None):
-        # 1. Calculate Live Stats
+        # 1. Base Global Stats
         total_weight_stats = RecyclingTransaction.objects.aggregate(total_kg=Sum('weight_kg'))
         total_kg = total_weight_stats['total_kg'] or 0
         co2_saved = float(total_kg) * 1.5
+
         total_users = User.objects.count()
         total_redemptions = RewardRedemption.objects.count()
+        total_pickups = DelegateRequest.objects.filter(status='COMPLETED').count()
 
-        # 2. Inject the stats into the Django UI securely using the messages framework
-        # This renders beautifully across standard Django, Jazzmin, and Unfold!
+        # 2. Material Breakdown
+        materials = RecyclingTransaction.objects.values('material_type').annotate(
+            total_weight=Sum('weight_kg')
+        ).order_by('-total_weight')
+
+        materials_html = "".join(
+            [f"<li><b>{m['material_type']}</b>: {m['total_weight'] or 0} KG</li>" for m in materials])
+        if not materials_html:
+            materials_html = "<li>No materials recycled yet.</li>"
+
+        # 3. Top Kiosks
+        top_kiosks = RecyclingTransaction.objects.filter(kiosk__isnull=False).values(
+            'kiosk__name'
+        ).annotate(
+            total_contributed=Sum('weight_kg')
+        ).order_by('-total_contributed')[:3]
+
+        kiosks_html = "".join(
+            [f"<li><b>{k['kiosk__name']}</b>: {k['total_contributed'] or 0} KG</li>" for k in top_kiosks])
+        if not kiosks_html:
+            kiosks_html = "<li>No kiosk data yet.</li>"
+
+        # 4. Inject the HTML into the Django UI securely using Flexbox for a 3-column layout
         dashboard_html = f"""
-        <div style="font-size: 16px; padding: 10px; line-height: 1.8;">
-            <b>🌍 LIVE PLATFORM IMPACT:</b><br>
-            • Total Active Recyclers: <b>{total_users} users</b><br>
-            • Total Weight Recycled: <b>{total_kg} KG</b><br>
-            • Estimated CO2 Saved: <b>{co2_saved} KG</b><br>
-            • Total Rewards Claimed: <b>{total_redemptions} vouchers</b>
+        <div style="font-size: 15px; padding: 15px; line-height: 1.6; background-color: var(--body-bg); color: var(--body-fg); border-radius: 8px;">
+            <h2 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">🌍 LIVE PLATFORM IMPACT</h2>
+            <div style="display: flex; gap: 40px; flex-wrap: wrap; margin-top: 15px;">
+                <div style="flex: 1; min-width: 200px;">
+                    <h3 style="margin-bottom: 10px;">📈 Global Stats</h3>
+                    • Active Recyclers: <b>{total_users}</b><br>
+                    • Total Weight: <b>{total_kg} KG</b><br>
+                    • Estimated CO2 Saved: <b>{co2_saved} KG</b><br>
+                    • Rewards Claimed: <b>{total_redemptions}</b><br>
+                    • Delegate Pickups: <b>{total_pickups}</b>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <h3 style="margin-bottom: 10px;">♻️ Material Breakdown</h3>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        {materials_html}
+                    </ul>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <h3 style="margin-bottom: 10px;">📍 Top 3 Kiosks</h3>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        {kiosks_html}
+                    </ul>
+                </div>
+            </div>
         </div>
         """
-        messages.info(request, format_html(dashboard_html))
+
+        messages.info(request, mark_safe(dashboard_html))
 
         return super().changelist_view(request, extra_context=extra_context)
