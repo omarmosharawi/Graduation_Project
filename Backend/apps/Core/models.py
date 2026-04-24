@@ -31,14 +31,32 @@ class Reward(models.Model):
 
 class Kiosk(models.Model):
     """Smart Kiosk locations for the interactive map."""
+    STATUS_CHOICES = (
+        ('online', 'Online / Active'),
+        ('offline', 'Offline'),
+        ('maintenance', 'Under Maintenance'),
+        ('full', 'Full Capacity'),
+    )
+
     name = models.CharField(max_length=255, unique=True, help_text="Specific unique name or ID of the Kiosk.")
-    location_name = models.CharField(max_length=255)
+    address = models.CharField(max_length=255, help_text="Full address")
+
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
-    is_operational = models.BooleanField(default=True)
+
+    # Capacity & Hardware Tracking
+    current_capacity = models.PositiveIntegerField(default=0)
+    max_capacity = models.PositiveIntegerField(default=100)
+    plastic_count = models.PositiveIntegerField(default=0)
+    metal_count = models.PositiveIntegerField(default=0)
+
+    # Operational Details
+    opening_hours = models.CharField(max_length=100, default="9:00 AM - 9:00 PM")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='offline')
+    last_updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} - {self.location_name}"
+        return f"{self.name} - {self.get_status_display()} ({self.current_capacity}/{self.max_capacity})"
 
 
 class RecyclingTransaction(models.Model):

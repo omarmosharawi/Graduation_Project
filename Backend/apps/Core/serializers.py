@@ -31,7 +31,11 @@ class KioskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Kiosk
-        fields = ('id', 'name', 'location_name', 'latitude', 'longitude', 'is_operational')
+        fields = (
+            'id', 'name', 'address', 'latitude', 'longitude',
+            'current_capacity', 'max_capacity', 'plastic_count',
+            'metal_count', 'opening_hours', 'status', 'last_updated'
+        )
 
 
 class TransactionSerializer(serializers.ModelSerializer):

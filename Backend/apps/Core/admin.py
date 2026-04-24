@@ -70,15 +70,23 @@ class RewardAdmin(admin.ModelAdmin):
 
 @admin.register(Kiosk)
 class KioskAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'location_name', 'latitude', 'longitude', 'is_operational')
-    search_fields = ('name', 'location_name')
-    list_filter = ('is_operational',)
-    list_editable = ('is_operational',)
-    ordering = ('id',)
+    list_display = ('name', 'address', 'status', 'current_capacity', 'max_capacity', 'last_updated')
+    search_fields = ('name', 'address')
+    list_filter = ('status',)
+
+    # Allow admins to quickly toggle status or fix capacity from the list view
+    list_editable = ('status', 'current_capacity')
+    readonly_fields = ('last_updated',)
 
     fieldsets = (
-        ('Kiosk Details', {
-            'fields': ('name', 'location_name', 'is_operational')
+        ('Location & Info', {
+            'fields': ('name', 'address', 'opening_hours')
+        }),
+        ('Live Hardware Status', {
+            'fields': ('status', 'last_updated')
+        }),
+        ('Inventory Metrics', {
+            'fields': ('current_capacity', 'max_capacity', 'plastic_count', 'metal_count')
         }),
         ('Map Coordinates', {
             'fields': ('latitude', 'longitude')
