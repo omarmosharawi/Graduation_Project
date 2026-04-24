@@ -64,7 +64,7 @@ class ProfileAdmin(admin.ModelAdmin):
     list_filter = ('rank',)
     search_fields = ('user__username', 'user__email', 'user__phone', 'invite_code')
     readonly_fields = ('invite_code', 'reset_password_token', 'reset_password_expire')
-    list_editable = ('current_points', 'total_points')
+    # list_editable = ('current_points', 'total_points')
     ordering = ('-total_points',)
 
     autocomplete_fields = ['referred_by']
@@ -83,7 +83,7 @@ class CustomUserAdmin(admin.ModelAdmin):
     inlines = (ProfileInline,)
 
     # What shows up on the main list table
-    list_display = ('uuid', 'username', 'email', 'phone', 'login_method', 'first_name', 'last_name', 'is_active', 'email_verified', 'phone_verified')
+    list_display = ('uuid', 'username', 'email', 'phone', 'first_name', 'last_name', 'is_active', 'email_verified', 'phone_verified', 'login_method')
 
     # Filters on the right sidebar
     list_filter = ('is_active', AuthMethodFilter, 'is_staff', 'email_verified', 'phone_verified')
