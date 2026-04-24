@@ -121,7 +121,7 @@ class DelegateRequestListView(generics.ListCreateAPIView):
 
 class KioskMapView(generics.ListAPIView):
     """Interactive Map to Locate Partner Kiosks."""
-    queryset = Kiosk.objects.filter(is_operational=True)
+    queryset = Kiosk.objects.filter(status='online')
     serializer_class = KioskSerializer
     permission_classes = [IsAuthenticated]
 
