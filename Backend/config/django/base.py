@@ -335,3 +335,23 @@ LOGGING = {
         },
     },
 }
+
+
+# ==============================================================================
+# CACHES
+# ==============================================================================
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        # In development, it looks for Redis on localhost. In production, this will be your server IP.
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Optional but recommended: Tell Django to cache the session data in Redis too for extra speed!
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
