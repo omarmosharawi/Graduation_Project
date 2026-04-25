@@ -123,7 +123,7 @@ class CouponRedemptionAdmin(admin.ModelAdmin):
 
 @admin.register(Kiosk)
 class KioskAdmin(admin.ModelAdmin):
-    list_display = ('name', 'address', 'status', 'current_capacity', 'max_capacity', 'last_updated')
+    list_display = ('name', 'address', 'opening_hours', 'status', 'current_capacity', 'max_capacity', 'last_updated')
     search_fields = ('name', 'address')
     list_filter = ('status',)
 
