@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 import uuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from .Tasks.notification_tasks import process_custom_notification
 
 User = get_user_model()
@@ -132,6 +133,55 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.badge.name}"
+
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True, help_text="e.g., WELCOME500, EID2026")
+    description = models.CharField(max_length=255, help_text="What is this coupon for?")
+    reward_points = models.PositiveIntegerField(help_text="How many points does the user get?")
+
+    # Limitations
+    max_uses = models.PositiveIntegerField(default=0,
+                                           help_text="0 means unlimited. Otherwise, sets a cap on total uses globally.")
+    current_uses = models.PositiveIntegerField(default=0)
+    is_first_time_only = models.BooleanField(default=False,
+                                             help_text="Only users with ZERO past recycling transactions can use this.")
+
+    # Expiration
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_to = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        """Checks dates, limits, and active status."""
+        if not self.is_active:
+            return False, "This coupon is disabled."
+        if self.max_uses > 0 and self.current_uses >= self.max_uses:
+            return False, "This coupon has reached its usage limit."
+        now = timezone.now()
+        if self.valid_from and now < self.valid_from:
+            return False, "This coupon is not active yet."
+        if self.valid_to and now > self.valid_to:
+            return False, "This coupon has expired."
+        return True, "Valid"
+
+    def __str__(self):
+        return f"{self.code} ({self.reward_points} pts)"
+
+
+class CouponRedemption(models.Model):
+    """Tracks which user used which coupon to prevent double-dipping."""
+    user = models.ForeignKey('Users.User', related_name='redeemed_coupons', on_delete=models.CASCADE)
+    coupon = models.ForeignKey(Coupon, related_name='redemptions', on_delete=models.CASCADE)
+    redeemed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'coupon')  # A user can only use a specific coupon ONCE
+
+    def __str__(self):
+        return f"{self.user.username} redeemed {self.coupon.code}"
 
 
 class CustomNotification(models.Model):

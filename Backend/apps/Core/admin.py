@@ -8,13 +8,13 @@ from .models import (
     Partner, Reward, Kiosk, RecyclingTransaction,
     RewardRedemption, Badge, UserBadge,
     CustomNotification, DelegateRequest, CommunityImpact,
-    PartnerCategory, HomeCard
+    PartnerCategory, HomeCard, Coupon, CouponRedemption
 )
 from .Tasks.notification_tasks import process_custom_notification
 
 
 # ==========================================
-# 1. PARTNERS & REWARDS
+# PARTNERS & REWARDS & COUPON
 # ==========================================
 
 class RewardInline(admin.TabularInline):
@@ -78,8 +78,47 @@ class RewardAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ('code', 'reward_points', 'current_uses', 'max_uses', 'is_active', 'is_first_time_only', 'valid_to')
+    list_filter = ('is_active', 'is_first_time_only', 'valid_from', 'valid_to')
+    search_fields = ('code', 'description')
+    list_editable = ('is_active',)
+
+    fieldsets = (
+        ('Coupon Details', {
+            'fields': ('code', 'description', 'reward_points')
+        }),
+        ('Rules & Limits', {
+            'fields': ('is_active', 'is_first_time_only', 'max_uses', 'current_uses')
+        }),
+        ('Schedule (Optional)', {
+            'fields': ('valid_from', 'valid_to'),
+            'description': "Leave blank if the coupon does not expire."
+        }),
+    )
+
+
+@admin.register(CouponRedemption)
+class CouponRedemptionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'coupon', 'redeemed_at')
+    list_filter = ('coupon', 'redeemed_at')
+    search_fields = ('user__username', 'coupon__code')
+    readonly_fields = ('user', 'coupon', 'redeemed_at')
+
+    def has_add_permission(self, request):
+        # Admins shouldn't manually add, users do it via the API
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 # ==========================================
-# 2. KIOSKS & TRANSACTIONS
+# KIOSKS & TRANSACTIONS
 # ==========================================
 
 @admin.register(Kiosk)
@@ -127,8 +166,15 @@ class RecyclingTransactionAdmin(admin.ModelAdmin):
         }),
     )
 
+    def has_add_permission(self, request):
+        # Admins shouldn't manually add, users do it via the API
+        return False
+
     def has_change_permission(self, request, obj=None):
-        return False  # Strict ledger integrity
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(RewardRedemption)
@@ -149,9 +195,19 @@ class RewardRedemptionAdmin(admin.ModelAdmin):
         }),
     )
 
+    def has_add_permission(self, request):
+        # Admins shouldn't manually add, users do it via the API
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 # ==========================================
-# 3. GAMIFICATION & NOTIFICATIONS
+# GAMIFICATION & NOTIFICATIONS
 # ==========================================
 
 @admin.register(Badge)
@@ -187,7 +243,14 @@ class UserBadgeAdmin(admin.ModelAdmin):
     readonly_fields = ('user', 'badge', 'earned_at')
     ordering = ('-earned_at',)
 
+    def has_add_permission(self, request):
+        # Admins shouldn't manually add, users do it via the API
+        return False
+
     def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
 
 
@@ -225,7 +288,7 @@ class CustomNotificationAdmin(admin.ModelAdmin):
 
 
 # ==========================================
-# 4. DELEGATE REQUESTS (ON-DEMAND)
+# DELEGATE REQUESTS (ON-DEMAND)
 # ==========================================
 
 @admin.register(DelegateRequest)
@@ -261,6 +324,10 @@ class DelegateRequestAdmin(admin.ModelAdmin):
             'classes': ('collapse',)  # Hides this section by default to keep the UI clean
         }),
     )
+
+    def has_add_permission(self, request):
+        # Admins shouldn't manually add, users do it via the API
+        return False
 
     # Beautiful, clickable image preview for the operations team
     def display_proof(self, obj):

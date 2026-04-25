@@ -12,7 +12,8 @@ from .views import (
     HomeCardListView,
     AvailableJobsView,
     AcceptJobView,
-    CompleteJobView
+    CompleteJobView,
+    RedeemCouponView
 )
 
 app_name = 'core'
@@ -22,6 +23,7 @@ urlpatterns = [
     path('categories/', CategoryListView.as_view(), name='category-list'),
     path('rewards/', RewardsCatalogView.as_view(), name='rewards-catalog'),
     path('rewards/<int:reward_id>/redeem/', RedeemRewardView.as_view(), name='redeem-reward'),
+    path('coupons/redeem/', RedeemCouponView.as_view(), name='redeem-coupon'),
 
     # Recycling & Transactions
     path('transactions/', TransactionHistoryView.as_view(), name='transaction-history'),

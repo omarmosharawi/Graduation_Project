@@ -6,7 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
-from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption, PartnerCategory, HomeCard, DelegateRequest
+from .models import Reward, RecyclingTransaction, Kiosk, RewardRedemption, PartnerCategory, HomeCard, DelegateRequest, Coupon, CouponRedemption
 from apps.Users.models import User
 from .serializers import RewardSerializer, TransactionSerializer, DelegateRequestSerializer, KioskSerializer, PartnerCategorySerializer, HomeCardSerializer, AcceptJobInputSerializer, CompleteJobInputSerializer
 from .services import CoreService, GamificationService, DelegateService, DelegateRequest
@@ -137,6 +137,65 @@ class UserBadgesView(APIView):
             } for ub in user_badges
         ]
         return Response({"badges": data}, status=200)
+
+
+class RedeemCouponInputSerializer(serializers.Serializer):
+    code = serializers.CharField(required=True)
+
+class RedeemCouponView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Redeem a Promo Coupon",
+        description="Allows a user to enter a coupon code to get bonus points.",
+        request=RedeemCouponInputSerializer,
+        responses={200: OpenApiResponse(description="Coupon applied successfully.")}
+    )
+    def post(self, request):
+        serializer = RedeemCouponInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        code = serializer.validated_data['code'].upper().strip()
+
+        try:
+            coupon = Coupon.objects.get(code=code)
+        except Coupon.DoesNotExist:
+            return Response({"error": "Invalid coupon code."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the coupon is valid (dates, global limits, active status)
+        is_valid, error_message = coupon.is_valid()
+        if not is_valid:
+            return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the user has ALREADY used this exact coupon
+        if CouponRedemption.objects.filter(user=request.user, coupon=coupon).exists():
+            return Response({"error": "You have already used this coupon."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check "First Time Only" rule
+        if coupon.is_first_time_only:
+            # If the user has any past recycling transactions, block it
+            if RecyclingTransaction.objects.filter(user=request.user).exists():
+                return Response({"error": "This coupon is only for new users on their first pickup."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Award the points safely
+        with transaction.atomic():
+            # Update the coupon uses
+            coupon.current_uses += 1
+            coupon.save()
+
+            # Log the redemption to prevent future use
+            CouponRedemption.objects.create(user=request.user, coupon=coupon)
+
+            # Give the user their points
+            profile = request.user.profile
+            profile.current_points += coupon.reward_points
+            profile.total_points += coupon.reward_points
+            profile.save()
+
+        return Response({
+            "message": "Coupon applied successfully!",
+            "points_awarded": coupon.reward_points,
+            "new_balance": profile.current_points
+        }, status=status.HTTP_200_OK)
 
 
 class DelegateRequestListView(generics.ListCreateAPIView):

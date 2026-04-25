@@ -60,8 +60,8 @@ class ProfileInline(admin.StackedInline):
 # Register Profile separately so you can filter specifically by Gamification Ranks
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'rank', 'current_points', 'total_points', 'invite_code')
-    list_filter = ('rank',)
+    list_display = ('user', 'rank', 'current_points', 'total_points', 'invite_code', 'referred_by')
+    list_filter = ('rank', 'referred_by')
     search_fields = ('user__username', 'user__email', 'user__phone', 'invite_code')
     readonly_fields = ('invite_code', 'reset_password_token', 'reset_password_expire')
     # list_editable = ('current_points', 'total_points')
@@ -76,6 +76,15 @@ class ProfileAdmin(admin.ModelAdmin):
 
     referred_by_username.short_description = "Referred By"
     referred_by_username.admin_order_field = 'referred_by__user__username'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(User)
