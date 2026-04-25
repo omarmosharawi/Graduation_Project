@@ -16,6 +16,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from rest_framework.throttling import UserRateThrottle
 
 
 class RewardsCatalogView(generics.ListAPIView):
@@ -142,11 +143,18 @@ class UserBadgesView(APIView):
         return Response({"badges": data}, status=200)
 
 
+# Define a specific throttle class that links to the 'coupon_attempts' scope in base.py
+class CouponRateThrottle(UserRateThrottle):
+    scope = 'coupon_attempts'
+
 class RedeemCouponInputSerializer(serializers.Serializer):
     code = serializers.CharField(required=True)
 
 class RedeemCouponView(APIView):
     permission_classes = [IsAuthenticated]
+
+    # This single line protects the endpoint from brute-force bot attacks!
+    throttle_classes = [CouponRateThrottle]
 
     @extend_schema(
         summary="Redeem a Promo Coupon",

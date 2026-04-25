@@ -31,6 +31,7 @@ REST_FRAMEWORK = {
         "anon": "100/day",
         "user": "1000/day",
         "otp_request": "1/min",
+        "coupon_attempts": "5/min",
     },
 }
 
