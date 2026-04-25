@@ -1,0 +1,130 @@
+version: '3.8'
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  postgres_data: {}
+  static_volume: {}
+  media_volume: {}
+  prometheus_data: {}
+  grafana-data: {}
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: RE_Postgres_Prod
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ../.env.prod
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:6-alpine
+    container_name: RE_Redis_Prod
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  django:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    container_name: RE_App_Prod
+    restart: always
+    command: >
+      bash -c "python manage.py collectstatic --noinput &&
+               python manage.py migrate && 
+               gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    volumes:
+      - ..:/code
+      - static_volume:/code/staticfiles
+      - media_volume:/code/media
+    env_file:
+      - ../.env.prod
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    container_name: RE_Celery_Prod
+    restart: always
+    command: celery -A config worker -l info
+    volumes:
+      - ..:/code
+      - media_volume:/code/media
+    env_file:
+      - ../.env.prod
+    depends_on:
+      - redis
+      - db
+
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    container_name: RE_Celery_Beat_Prod
+    restart: always
+    command: celery -A config beat -l info
+    volumes:
+      - ..:/code
+    env_file:
+      - ../.env.prod
+    depends_on:
+      - redis
+      - db
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: RE_Nginx_Prod
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/code/staticfiles
+      - media_volume:/code/media
+    depends_on:
+      - django
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: RE_Prometheus_Prod
+    restart: always
+    volumes:
+      - ../prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: RE_Grafana_Prod
+    restart: always
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - monitoring
