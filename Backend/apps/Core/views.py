@@ -14,6 +14,8 @@ from django.core.exceptions import ValidationError
 from django.db.models import Sum, Count
 from django.db import transaction
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 
 class RewardsCatalogView(generics.ListAPIView):
@@ -84,6 +86,7 @@ class TransactionHistoryView(generics.ListAPIView):
         return RecyclingTransaction.objects.filter(user=self.request.user).order_by('-created_at')
 
 
+@method_decorator(cache_page(60 * 5), name='dispatch')
 class LeaderboardView(APIView):
     """Handles both Weekly and All-Time leaderboard requests."""
     permission_classes = [IsAuthenticated]
@@ -346,6 +349,7 @@ class HomeCardListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class CommunityImpactView(APIView):
     """Dashboard showing the community's collective impact."""
     permission_classes = [IsAuthenticated]
