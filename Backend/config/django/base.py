@@ -73,6 +73,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
     "drf_spectacular_sidecar",
     "rest_framework_simplejwt",
+    "drf_api_logger",
 ]
 
 LOCAL_APPS = [
@@ -104,7 +105,10 @@ MIDDLEWARE = (
         "corsheaders.middleware.CorsMiddleware",
     ]
     + BASIC_MIDDLEWARE
-    + ["django_prometheus.middleware.PrometheusAfterMiddleware"]
+    + [
+        "django_prometheus.middleware.PrometheusAfterMiddleware",
+        "drf_api_logger.middleware.api_logger_middleware.APILoggerMiddleware",
+    ]
 )
 
 
@@ -336,6 +340,23 @@ LOGGING = {
         },
     },
 }
+
+
+# ==============================================================================
+# DRF API LOGGER CONFIGURATION
+# ==============================================================================
+DRF_API_LOGGER_DATABASE = True  # Save logs to the PostgreSQL Database so you can see them in Admin
+DRF_API_LOGGER_SIGNAL = True   # Set to True if you want to trigger Celery tasks on logs instead
+
+# CRITICAL SECURITY: Hide sensitive keys from the database logs
+DRF_API_LOGGER_EXCLUDE_KEYS = ['password', 'token', 'access', 'refresh', 'id_token', 'fcm_token']
+
+# What methods and statuses do you want to track?
+DRF_API_LOGGER_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+DRF_API_LOGGER_STATUS_CODES = [] # Empty list means it logs ALL status codes (200s, 400s, 500s)
+
+# Optional: Avoid logging Swagger UI or Prometheus metrics polling to save DB space
+DRF_API_LOGGER_SKIP_URL_NAME = ['schema', 'swagger-ui', 'redoc', 'prometheus-django-metrics']
 
 
 # ==============================================================================
