@@ -88,7 +88,7 @@ class AcceptJobInputSerializer(serializers.Serializer):
 class CompleteJobInputSerializer(serializers.Serializer):
     request_id = serializers.IntegerField()
     actual_weight_kg = serializers.DecimalField(max_digits=6, decimal_places=2, help_text="Exact weight measured by the delegate.")
-    material_type = serializers.ChoiceField(choices=['PLASTIC', 'GLASS', 'METAL', 'PAPER', 'MIXED'])
+    material_type = serializers.ChoiceField(choices=['PLASTIC', 'GLASS', 'CANS', 'PAPER', 'MIXED'])
     proof_image = serializers.ImageField(required=False, help_text="Optional photo of the collected materials.")
 
 
