@@ -22,3 +22,7 @@ code
 local_data.json
 Pipfile
 Pipfile.lock
+Backend/firebase-service-account.json
+EcoSystem/API/google-services.json
+EcoSystem/API/api/service-account.json
+EcoSystem/Mobile App/android/app/google-services.json
