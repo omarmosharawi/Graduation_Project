@@ -57,7 +57,7 @@
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyChcvzfZREwA2SNIs24zWwa0-bRIN12ZoY"/>
+            android:value="api-key"/>
         
         <!-- Default Notification Channel (Required for Android 8.0+) -->
         <meta-data

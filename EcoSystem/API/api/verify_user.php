@@ -5,7 +5,7 @@ $email = $argv[1] ?? '';
 if (!$email)
     die("Usage: php verify_user.php email@example.com\n");
 
-$apiKey = 'AIzaSyCYxBmm6AtRgwDPFT4j0qtkMJ10Rl50TRc';
+$apiKey = 'api-key';
 $url = "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=$apiKey";
 
 $ch = curl_init();

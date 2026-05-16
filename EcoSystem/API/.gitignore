@@ -35,7 +35,9 @@ reward_app/ios/Flutter/Flutter.podspec
 .DS_Store
 
 # API Secrets (IMPORTANT!)
+google-services.json
 api/config.php
+api/service-account.json
 
 # Firebase config (keep local, don't commit to public repos)
 # google-services.json
