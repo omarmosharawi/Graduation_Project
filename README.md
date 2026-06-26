@@ -157,7 +157,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 | Role                         | Member(s)    |
 | ---------------------------- |--------------|
 | **Product Manager & Team Leader** | Omar         |
-| **Documentation & Architecture & Presentation** | Asmaa, Sherin  |
+| **Documentation & Architecture & Presentation** | Asmaa, Sherin, Clara  |
 | **Product Designer (UI/UX)** | Clara, Sherin |
 | **Web Frontend Developer** | Omar, Kirolos   |
 | **Mobile Frontend Developer**| Abdelaziz, Ramez  |
